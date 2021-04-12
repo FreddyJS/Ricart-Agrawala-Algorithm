@@ -1,6 +1,6 @@
 all:
-	gcc init.c -o init
-	gcc nodo.c -o nodo
+	gcc init.c -lpthread -o init
+	gcc nodo.c -lpthread -o nodo
 
 run:
 	./init 4
