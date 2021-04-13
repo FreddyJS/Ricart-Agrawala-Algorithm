@@ -15,15 +15,12 @@ void deleteq (int *ID){
 
     for (int i=0; i<NumNodos; i++){
 
-         msgctl(ID[i], IPC_RMID, NULL);
+        msgctl(ID[i], IPC_RMID, NULL);
 
     }
-   
 
 }
 void nodo (int id, int firstq, int numNodos){
-
-
     char param1[20] = "";
     sprintf(param1, "%i", id);
     char param2[20] = "";
@@ -31,15 +28,13 @@ void nodo (int id, int firstq, int numNodos){
     char param3[20] = "";
     sprintf(param3, "%i", numNodos);
     
-
     execl("./nodo", "./nodo", param1, param2, param3, NULL);
 
     exit (0);
 
 }
 
-int main (int argc, char* argv[]){
-
+int main (int argc, char* argv[]) {
 
     NumNodos= atoi(argv[1]);
     int ID [NumNodos];
@@ -79,8 +74,5 @@ int main (int argc, char* argv[]){
     
     while (wait(NULL)!=-1);
     deleteq(ID);
-
-
-
   
 }
