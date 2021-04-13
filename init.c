@@ -69,6 +69,7 @@ int main (int argc, char* argv[]){
 
 
 
+
     while (wait(NULL)!=-1);
     deleteq(ID);
 
