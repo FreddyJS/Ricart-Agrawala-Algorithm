@@ -6,11 +6,10 @@
 #include <stdlib.h>
 #include <sys/msg.h>
 #include <unistd.h> // necesaria para ejecutar fork()
-
+#include <string.h>
+#include <signal.h>
 
 int NumNodos;
-
-
 
 void deleteq (int *ID){
 
@@ -53,23 +52,31 @@ int main (int argc, char* argv[]){
 		    printf("No se ha podido crear eñ buzón.\n");
 		
             return -1;
-	}
-}
+	    }
+    }
 
+    pid_t childs[NumNodos];
 
     for (int i=0; i<NumNodos; i++){
 
         pid_t child=fork();
 
-        if (child==0) nodo(i,ID[0],NumNodos);
-
-        
-
+        if (child==0) nodo(i,ID[0],NumNodos);        
+        childs[i] = child;
     }
 
+    char option = 'n';
+    
+    while (option != 'q')
+    {
+        scanf("%c", &option);
+    }
 
-
-
+    for (size_t i = 0; i < NumNodos; i++)
+    {
+        kill(childs[i], SIGKILL);
+    }
+    
     while (wait(NULL)!=-1);
     deleteq(ID);
 
