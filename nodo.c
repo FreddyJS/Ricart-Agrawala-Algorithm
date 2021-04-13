@@ -4,6 +4,9 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <semaphore.h>
+
+sem_t mutex;
 
 struct params{
 
@@ -32,11 +35,14 @@ void *receptor( void *params){
 
     int *vecinos= data->vecinos;
     int id= data->id;
-    
+        
     while(1){
 
         if (msgrcv(vecinos[id], &msg, sizeof(int)*2, 3, IPC_NOWAIT)!=-1) break;
         msgrcv(vecinos[id], &msg, sizeof(int)*2, 1, 0);
+        
+        sem_wait(&mutex);
+
         printf("[Node %i] Received Request. Node: %i, Ticket: %i, Queue: %i \n", id, msg.nodo, msg.ticket, vecinos[msg.nodo]);
 
         if (max_ticket<msg.ticket) max_ticket=msg.ticket;
@@ -52,13 +58,15 @@ void *receptor( void *params){
             printf("[Node %i] New waiting node %i\n\n", id, msg.nodo);
         }
 
+        sem_post(&mutex);
     }
 
     pthread_exit(NULL);
 }
 
 int main (int argc, char* argv[]){
-       
+    sem_init(&mutex, 0, 1);
+
     int id= atoi(argv[1]);
     int firstq= atoi(argv[2]);
     int numNodos= atoi(argv[3]);
@@ -84,8 +92,11 @@ int main (int argc, char* argv[]){
 
     while (1)
     {   
+        sem_wait(&mutex);
         quiero=1;
         mi_ticket=max_ticket+1;
+        sem_post(&mutex);
+
         for (int i = 0; i < numNodos; i++)
         {
             if(i!=id){
@@ -105,6 +116,9 @@ int main (int argc, char* argv[]){
             ssize_t x= msgrcv(vecinos[id], &msg, sizeof(int)*2, 2, 0);
             if (x==-1) printf("errorrr %i \n", vecinos[id]);            
         }
+
+        //if (max_ticket < mi_ticket) max_ticket = mi_ticket;
+        //mi_ticket++;
         
         //SECCION CRITICA
         printf("[Node %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i\n", id, mi_ticket);
