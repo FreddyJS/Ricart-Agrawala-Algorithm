@@ -3,4 +3,4 @@ all:
 	gcc nodo.c -lpthread -o nodo
 
 run:
-	./init 4
+	./init 5

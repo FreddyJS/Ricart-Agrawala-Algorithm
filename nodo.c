@@ -37,8 +37,6 @@ void *receptor( void *params){
     int id= data->id;
         
     while(1){
-
-        if (msgrcv(vecinos[id], &msg, sizeof(int)*2, 3, IPC_NOWAIT)!=-1) break;
         msgrcv(vecinos[id], &msg, sizeof(int)*2, 1, 0);
         
         sem_wait(&mutex);
@@ -114,14 +112,14 @@ int main (int argc, char* argv[]){
         {
             struct msgbuf msg;    
             ssize_t x= msgrcv(vecinos[id], &msg, sizeof(int)*2, 2, 0);
-            if (x==-1) printf("errorrr %i \n", vecinos[id]);            
+            if (x==-1) printf("\033[0;31mError on msgrcv(). Queue: %i\033[0m\n", vecinos[id]);            
         }
 
         //if (max_ticket < mi_ticket) max_ticket = mi_ticket;
         //mi_ticket++;
         
         //SECCION CRITICA
-        printf("[Node %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i\n", id, mi_ticket);
+        printf("[Node %i] \033[0;35mDentro de la sección crítica.\033[0m Ticket: %i\n", id, mi_ticket);
 
         // Fuera de la sección crítica
         quiero=0;
@@ -139,12 +137,6 @@ int main (int argc, char* argv[]){
         }
         n_pendientes=0;
     }
-    
-    struct msgbuf msg;
-    msg.mtype=3;
-    msg.nodo=0;
-    msg.ticket=0;
-    msgsnd(vecinos[id],&msg, sizeof(int)*2,0);
     
     return 0;
 }
