@@ -37,11 +37,11 @@ void *receptor( void *params){
 
         if (msgrcv(vecinos[id], &msg, sizeof(int)*2, 3, IPC_NOWAIT)!=-1) break;
         msgrcv(vecinos[id], &msg, sizeof(int)*2, 1, 0);
-        printf("[Node %i] Received Request. Node: %i, Ticket: %i, Queue: %i \n", id, msg.nodo, msg.ticket, vecinos[msg.nodo]);
+        printf("[Node %i]Received Request. Node: %i, Ticket: %i, Queue: %i \n", id, msg.nodo, msg.ticket, vecinos[msg.nodo]);
 
         if (max_ticket<msg.ticket) max_ticket=msg.ticket;
         if (!quiero || msg.ticket<mi_ticket || (msg.ticket==mi_ticket && msg.nodo<id )) {
-            printf("[Node %i] Accepted Request: Node: %i, Ticket: %i, Queue: %i\n\n", id, msg.nodo, msg.ticket, vecinos[msg.nodo]);
+            printf("[Node %i] \033[0;32mAccepted Request: Node: %i, Ticket: %i, Queue: %i\033[0m\n\n", id, msg.nodo, msg.ticket, vecinos[msg.nodo]);
             int id_node = msg.nodo;
             msg.mtype=2;
             msg.nodo=id;
@@ -52,9 +52,6 @@ void *receptor( void *params){
             pendientes[n_pendientes++]=msg.nodo;
             printf("[Node %i] New waiting node %i\n\n", id, msg.nodo);
         }
-
-
-
 
     }
 
@@ -76,7 +73,7 @@ int main (int argc, char* argv[]){
         vecinos[j]=firstq+j;
     }
 
-    printf("[Node %i] Node started. Queue: %i. Nodes: %i\n", id, vecinos[id], numNodos);
+    printf("[Node %i] \033[0;34mNode started. Queue: %i. Nodes: %i\033[0m\n", id, vecinos[id], numNodos);
     
     params.id=id;
     params.vecinos=vecinos;
@@ -86,7 +83,7 @@ int main (int argc, char* argv[]){
         exit(0);
     }
 
-    //pedir entrada ala seccion critica
+    // Pedir entrada ala seccion critica
 
     quiero=1;
     mi_ticket=max_ticket+1;
@@ -116,6 +113,8 @@ int main (int argc, char* argv[]){
     
     //SECCION CRITICA
     printf("[Node %i] \033[0;31mSECCION CRITICA\033[0m \n", id );
+
+    // Fuera de la sección crítica
     quiero=0;
 
 
@@ -127,7 +126,7 @@ int main (int argc, char* argv[]){
         msg.mtype=2;
         msg.nodo=id;
         msg.ticket=0;
-        printf("[Node %i] Sending Reply Waiting Nodes: Node: %i, Queue: %i\n\n", id, pendientes[i], vecinos[pendientes[i]]);
+        printf("[Node %i] \033[0;32mSending Reply Waiting Nodes: Node: %i, Queue: %i \033[0m\n\n", id, pendientes[i], vecinos[pendientes[i]]);
         msgsnd(vecinos[pendientes[i]],&msg, sizeof(int)*2,0);
     }
     n_pendientes=0;
