@@ -33,25 +33,24 @@ void *receptor( void *params){
     int *vecinos= data->vecinos;
     int id= data->id;
     
-   
-
     while(1){
 
         if (msgrcv(vecinos[id], &msg, sizeof(int)*2, 3, IPC_NOWAIT)!=-1) break;
         msgrcv(vecinos[id], &msg, sizeof(int)*2, 1, 0);
-        printf("Nodo %i : recivida req:  N%i T%i \n", id, msg.nodo, msg.ticket);
+        printf("[Node %i] Received Request. Node: %i, Ticket: %i, Queue: %i \n", id, msg.nodo, msg.ticket, vecinos[msg.nodo]);
 
         if (max_ticket<msg.ticket) max_ticket=msg.ticket;
         if (!quiero || msg.ticket<mi_ticket || (msg.ticket==mi_ticket && msg.nodo<id )) {
-            printf("Nodo %i : aceptada req:  N%i T%i \n", id, msg.nodo, msg.ticket);
+            printf("[Node %i] Accepted Request: Node: %i, Ticket: %i, Queue: %i\n\n", id, msg.nodo, msg.ticket, vecinos[msg.nodo]);
+            int id_node = msg.nodo;
             msg.mtype=2;
             msg.nodo=id;
             msg.ticket=0;
-            msgsnd(vecinos[msg.nodo], &msg, sizeof(int)*2 , 0);
+            msgsnd(vecinos[id_node], &msg, sizeof(int)*2 , 0);
         }else {
             
             pendientes[n_pendientes++]=msg.nodo;
-            printf("Nodo %i : nuevo nodo pendiente N%i\n", id, msg.nodo);
+            printf("[Node %i] New waiting node %i\n\n", id, msg.nodo);
         }
 
 
@@ -73,16 +72,12 @@ int main (int argc, char* argv[]){
     pendientes=malloc ((numNodos-1) * sizeof(int));
 
 
-
-    printf("id:%i first: %i num: %i \n",id,firstq,numNodos);
-
-
     for (int j=0; j<numNodos;j++){
-
         vecinos[j]=firstq+j;
-
-
     }
+
+    printf("[Node %i] Node started. Queue: %i. Nodes: %i\n", id, vecinos[id], numNodos);
+    
     params.id=id;
     params.vecinos=vecinos;
 
@@ -95,7 +90,7 @@ int main (int argc, char* argv[]){
 
     quiero=1;
     mi_ticket=max_ticket+1;
-    printf("Nodo %i : pedimos entrar T%i\n", id, mi_ticket);
+    printf("[Node %i]Sending Requests. Ticket: %i\n", id, mi_ticket);
     for (int i = 0; i < numNodos; i++)
     {
         if(i!=id){
@@ -103,7 +98,7 @@ int main (int argc, char* argv[]){
              msg.mtype=1;
              msg.nodo=id;
              msg.ticket=mi_ticket;
-             printf("Nodo %i : ENVIANDO req:  N%i T%i  A N%i \n", id, msg.nodo, msg.ticket,i);
+             printf("[Node %i] Request sended: Node: %i, Ticket: %i, ToQueue: %i \n", id, msg.nodo, msg.ticket, vecinos[i]);
              msgsnd(vecinos[i],&msg, sizeof(int)*2,0);
         }
 
@@ -111,33 +106,37 @@ int main (int argc, char* argv[]){
     
     for (int i = 0; i < numNodos-1; i++)
     {
-      
+        printf("[Node %i]Esperando en cola: %i\n", id, vecinos[id]);
         struct msgbuf msg;    
         ssize_t x= msgrcv(vecinos[id], &msg, sizeof(int)*2, 2, 0);
         if (x==-1) printf("errorrr %i \n", vecinos[id]);
-        printf("Nodo %i : recivida reply  N%i\n", id, msg.nodo);
+        printf("[Node %i] Received Reply. Node: %i\n", id, msg.nodo);
         
     }
     
     //SECCION CRITICA
-    printf("Nodo %i : estamos seccion critica \n", id );
+    printf("[Node %i] \033[0;31mSECCION CRITICA\033[0m \n", id );
     quiero=0;
 
-    for (int i = 0; i <n_pendientes ; i++)
+
+    printf("[Node %i] Fuera de la sección crítica\n\n", id);
+
+    for (int i = 0; i < n_pendientes; i++)
     {
         struct msgbuf msg;
-             msg.mtype=2;
-             msg.nodo=id;
-             msg.ticket=0;
-        msgsnd(pendientes[i],&msg, sizeof(int)*2,0);
+        msg.mtype=2;
+        msg.nodo=id;
+        msg.ticket=0;
+        printf("[Node %i] Sending Reply Waiting Nodes: Node: %i, Queue: %i\n\n", id, pendientes[i], vecinos[pendientes[i]]);
+        msgsnd(vecinos[pendientes[i]],&msg, sizeof(int)*2,0);
     }
     n_pendientes=0;
     
     struct msgbuf msg;
-             msg.mtype=3;
-             msg.nodo=0;
-             msg.ticket=0;
-        msgsnd(vecinos[id],&msg, sizeof(int)*2,0);
+    msg.mtype=3;
+    msg.nodo=0;
+    msg.ticket=0;
+    msgsnd(vecinos[id],&msg, sizeof(int)*2,0);
 
     return 0;
  
