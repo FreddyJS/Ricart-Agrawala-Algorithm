@@ -122,7 +122,9 @@ int main (int argc, char* argv[]){
         printf("[Node %i] \033[0;35mDentro de la sección crítica.\033[0m Ticket: %i\n", id, mi_ticket);
 
         // Fuera de la sección crítica
+        sem_wait(&mutex);
         quiero=0;
+        sem_post(&mutex);
 
         printf("[Node %i] Fuera de la sección crítica\n\n", id);
 
