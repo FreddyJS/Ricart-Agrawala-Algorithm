@@ -52,11 +52,11 @@ void *receptor( void *params){
         {
             int queue= (int) floor (msg.nodo/ProcesosNodo);
             int dest=msg.nodo;
-            printf("[Node %i]  Process: %i Received Request. Process: %i, Ticket: %i, Queue: %i \n", idNodo, id, msg.nodo, msg.ticket, vecinos[queue]);
+            printf("[Node %i - Process %i] Received Request. Process: %i, Ticket: %i, Queue: %i \n", idNodo, id, msg.nodo, msg.ticket, vecinos[queue]);
 
             if (max_ticket<msg.ticket) max_ticket=msg.ticket;
             if (!quiero || msg.ticket<mi_ticket || (msg.ticket==mi_ticket && msg.nodo<id )) {
-                printf("[Node %i] \033[0;32mAccepted Request: Process: %i, Ticket: %i, Queue: %i\033[0m\n\n", id, msg.nodo, msg.ticket, vecinos[queue]);
+                printf("[Node %i - Process %i] \033[0;32mAccepted Request: Process: %i, Ticket: %i, Queue: %i\033[0m\n\n", idNodo, id, msg.nodo, msg.ticket, vecinos[queue]);
                 msg.mtype=2;
                 msg.dest=dest;
                 msg.nodo=id;
@@ -64,7 +64,7 @@ void *receptor( void *params){
                 msgsnd(vecinos[queue], &msg, sizeof(int)*3 , 0);
             }else {
                 pendientes[n_pendientes++]=dest;
-                printf("[Node %i] New waiting PROCESS %i\n\n", idNodo, dest);
+                printf("[Node %i - Process %i] New waiting process %i\n\n", idNodo, id, dest);
              }
 
             
@@ -99,7 +99,7 @@ int main (int argc, char* argv[]){
         vecinos[j]=firstq+j;
     }
 
-    printf("[Node %i] \033[0;34mNode started. Process: %i. Queue: %i. Nodes: %i\033[0m\n", idNodo, id, vecinos[idNodo/ProcesosNodo], numNodos);
+    printf("[Node %i - Process %i] \033[0;34mProcess started. Queue: %i. Nodes: %i\033[0m\n", idNodo, id, vecinos[idNodo/ProcesosNodo], numNodos);
     
     params.id=id;
     params.vecinos=vecinos;
@@ -130,7 +130,7 @@ int main (int argc, char* argv[]){
                 msg.nodo=id;
                 msg.ticket=mi_ticket;
                 msg.dest=(i);
-                printf("[Node %i] \033[0;36mRequest sended: Process: %i, Ticket: %i, ToQueue: %i ToProcess: %i\033[0m \n", idNodo, msg.nodo, msg.ticket, vecinos[destQ], msg.dest);
+                printf("[Node %i - Process %i] \033[0;36mRequest sended: Ticket: %i, ToQueue: %i ToProcess: %i\033[0m \n", idNodo, id, msg.ticket, vecinos[destQ], msg.dest);
                 msgsnd(vecinos[destQ],&msg, sizeof(int)*3,0);
 
 
@@ -138,7 +138,7 @@ int main (int argc, char* argv[]){
 
         }
         
-        printf("[Node %i]  Process: %i. Waiting...\n", idNodo, id);
+        printf("[Node %i - Process %i] Waiting...\n", idNodo, id);
         for (int i = 0; i < ((numNodos*ProcesosNodo)-1); i++)
         {
             struct msgbuf msg; 
@@ -154,14 +154,14 @@ int main (int argc, char* argv[]){
 
      
         //SECCION CRITICA
-        printf("[Node %i]  Process: %i \033[0;35mDentro de la sección crítica.\033[0m Ticket: %i\n", idNodo, id,  mi_ticket);
+        printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i\n", idNodo, id,  mi_ticket);
 
         // Fuera de la sección crítica
         sem_wait(&mutex);
         quiero=0;
         sem_post(&mutex);
 
-        printf("[Node %i]  Process: %i Fuera de la sección crítica\n\n", idNodo, id);
+        printf("[Node %i - Process %i] Fuera de la sección crítica\n\n", idNodo, id);
 
         for (int i = 0; i < n_pendientes; i++)
         {
@@ -171,7 +171,7 @@ int main (int argc, char* argv[]){
             msg.nodo=id;
             msg.ticket=0;
             msg.dest=pendientes[i];
-            printf("[Node %i]  Process: %i \033[0;32mSending Reply Waiting  Process: %i, Queue: %i \033[0m\n\n", idNodo, id, pendientes[i], vecinos[nodoDest]);
+            printf("[Node %i - Process %i] \033[0;32mSending Reply Waiting  Process: %i, Queue: %i \033[0m\n\n", idNodo, id, pendientes[i], vecinos[nodoDest]);
             msgsnd(vecinos[nodoDest],&msg, sizeof(int)*3,0); 
         }
         n_pendientes=0;
