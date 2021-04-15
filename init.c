@@ -10,6 +10,7 @@
 #include <signal.h>
 
 int NumNodos;
+int ProcesosNodo;
 
 void deleteq (int *ID){
 
@@ -23,11 +24,13 @@ void nodo (int id, int firstq, int numNodos){
     char param1[20] = "";
     sprintf(param1, "%i", id);
     char param2[20] = "";
-    sprintf(param2, "%i", firstq);
+    sprintf(param2, "%i", firstq); //ID[0]
     char param3[20] = "";
     sprintf(param3, "%i", numNodos);
+    char param4[20] = "";
+    sprintf(param4, "%i",ProcesosNodo);
     
-    execl("./nodo", "./nodo", param1, param2, param3, NULL);
+    execl("./nodo", "./nodo", param1, param2, param3, param4, NULL);
 
     exit (0);
 }
@@ -35,6 +38,7 @@ void nodo (int id, int firstq, int numNodos){
 int main (int argc, char* argv[]) {
 
     NumNodos= atoi(argv[1]);
+    ProcesosNodo=atoi(argv[2]);
     int ID [NumNodos];
 
     for (int i=0; i<NumNodos; i++){
@@ -54,7 +58,7 @@ int main (int argc, char* argv[]) {
 
         pid_t child=fork();
 
-        if (child==0) nodo(i,ID[0],NumNodos);        
+        if (child==0) nodo(i*ProcesosNodo,ID[0],NumNodos);   //NumNodos ya es global?¿     
         childs[i] = child;
     }
 
@@ -70,7 +74,7 @@ int main (int argc, char* argv[]) {
         kill(childs[i], SIGKILL);
     }
     
-    while (wait(NULL)!=-1);
-    deleteq(ID);
+    while (wait(NULL)!=-1);  //Esperamos a que todos los hijos mueran
+    deleteq(ID);    //Borramos los buzones 
   
 }
