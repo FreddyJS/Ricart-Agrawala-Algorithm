@@ -1,6 +1,6 @@
 all:
 	gcc init.c -lpthread -o init
-	gcc nodo.c -lpthread -o nodo
+	gcc node.c -lpthread -o node
 	gcc process.c -lpthread -o process
 
 run:

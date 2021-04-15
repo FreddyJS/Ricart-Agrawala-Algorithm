@@ -10,7 +10,7 @@
 #include <signal.h>
 
 
-void nodo ( int id, int firstq, int numNodos,int ProcesosNodo,int idNodo){
+void process ( int id, int firstq, int numNodos,int ProcesosNodo,int idNodo){
     char param1[20] = "";
     sprintf(param1, "%i", id);
     char param2[20] = "";
@@ -22,21 +22,20 @@ void nodo ( int id, int firstq, int numNodos,int ProcesosNodo,int idNodo){
     char param5[20] = "";
     sprintf(param5, "%i",idNodo);
     
-   
     execl("./process", "./process", param1, param2, param3, param4, param5, NULL);
 
     exit (0);
 }
 
+void end_handler(int signo) {
+
+}
+
 int main (int argc, char* argv[]){
-
-
     int id= atoi(argv[1]);
     int firstq= atoi(argv[2]);
     int NumNodos= atoi(argv[3]);
     int ProcesosNodo = atoi(argv[4]);
-
-    
 
     pid_t childs[ProcesosNodo];
 
@@ -44,17 +43,20 @@ int main (int argc, char* argv[]){
 
         pid_t child=fork();
 
-        if (child==0) nodo(id+i,firstq,NumNodos,ProcesosNodo,id);      
+        if (child==0) process(id+i,firstq,NumNodos,ProcesosNodo,id);      
         childs[i] = child;
-        printf("Creado hijo %i  del  Nodo: %i \n",id+i,id);
+        printf("[Nodo: %i] Created process: %i\n",id, id+i);
     }
 
-    char option = 'n';
-    
-    while (option != 'p')
-    {
-        scanf("%c", &option);
-    }
+    struct sigaction sigact;
+
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = 0;
+    sigact.sa_handler = end_handler;
+
+    sigaction(SIGUSR1, &sigact, NULL); // Create a handler so the program not exit when SIGUSR1 arrives
+
+    pause(); // After receive SIGUSR1 from the init process we can delete all the childs
 
     for (size_t i = 0; i < ProcesosNodo; i++)
     {
@@ -63,7 +65,5 @@ int main (int argc, char* argv[]){
     
     while (wait(NULL)!=-1);
 
-
-    
     return 0;
 }

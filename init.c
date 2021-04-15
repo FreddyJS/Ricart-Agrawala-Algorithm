@@ -30,7 +30,7 @@ void nodo (int id, int firstq, int numNodos){
     char param4[20] = "";
     sprintf(param4, "%i",ProcesosNodo);
     
-    execl("./nodo", "./nodo", param1, param2, param3, param4, NULL);
+    execl("./node", "./node", param1, param2, param3, param4, NULL);
 
     exit (0);
 }
@@ -71,7 +71,7 @@ int main (int argc, char* argv[]) {
 
     for (size_t i = 0; i < NumNodos; i++)
     {
-        kill(childs[i], SIGKILL);
+        kill(childs[i], SIGUSR1);
     }
     
     while (wait(NULL)!=-1);  //Esperamos a que todos los hijos mueran
