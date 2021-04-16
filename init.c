@@ -43,7 +43,7 @@ int main (int argc, char* argv[]) {
 
     for (int i=0; i<NumNodos; i++){
 	
-	    ID[i] = msgget(IPC_PRIVATE, 0777 | IPC_CREAT); 
+	    ID[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT); 
 	
 	    if (ID[i] == -1){
 		    printf("No se ha podido crear eñ buzón.\n");
