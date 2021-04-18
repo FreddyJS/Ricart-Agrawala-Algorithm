@@ -7,7 +7,7 @@
 #include <semaphore.h>
 #include<math.h> //floor -> redondeo hacia bajo
 
-sem_t mutex;
+sem_t mutex, sc;
 
 int *pendientes;
 int mi_ticket;
@@ -32,7 +32,6 @@ struct msgbuf{
 };
 
 void *receptor( void *params){
-    struct msgbuf msg;
     struct params *data= (struct params *)params;
 
     int *vecinos= data->vecinos;
@@ -40,40 +39,50 @@ void *receptor( void *params){
     int idNodo= data->idNodo;
     int numNodo= data->numNodo;
     int ProcesosNodo= data->ProcesosNodo;
+    int accepted = 0;
         
+    struct msgbuf msg;
     while(1) {
-        msgrcv(vecinos[idNodo/ProcesosNodo], &msg, sizeof(int)*3, 1, 0);
+        msgrcv(vecinos[idNodo/ProcesosNodo], &msg, sizeof(int)*3, 0, 0);
 
-        if (msg.dest == id)
-        {
-            int queue= (int) floor (msg.nodo/ProcesosNodo);
-            int dest=msg.nodo;
-            printf("[Node %i - Process %i] Received Request. Process: %i, Ticket: %i, Queue: %i \n", idNodo, id, msg.nodo, msg.ticket, vecinos[queue]);
-
-            // Aquí movemos variables compartidas!!
-            sem_wait(&mutex);
-
-            if (max_ticket < msg.ticket) max_ticket = msg.ticket;
-            if (!quiero || msg.ticket < mi_ticket || (msg.ticket == mi_ticket && msg.nodo < id )) {
-                printf("[Node %i - Process %i] \033[0;32mAccepted Request: Process: %i, Ticket: %i, Queue: %i\033[0m\n\n", idNodo, id, msg.nodo, msg.ticket, vecinos[queue]);
-                msg.mtype = 2;
-                msg.dest = dest;
-                msg.nodo = id;
-                msg.ticket = 0;
-
-                msgsnd(vecinos[queue], &msg, sizeof(int)*3 , 0);
-            }else {
-                pendientes[n_pendientes++]=dest;
-                printf("[Node %i - Process %i] New waiting process %i\n\n", idNodo, id, dest);
-            }       
-
-            // Hemos terminado de usar variables compartidas!!
-            sem_post(&mutex);
-        } else {
-            //printf("[Node %i - Process %i] \033[0;31mEl mensaje no era para mi! Devolviendo a la cola...\033[0m\n", idNodo, id);
-
+        if (msg.dest != id) {
             msgsnd(vecinos[idNodo/ProcesosNodo],&msg, sizeof(int)*3,0);
+            continue;
         }
+
+        if (msg.mtype == 2) {
+            accepted++;
+            if (accepted == ((numNodo*ProcesosNodo)-1)) {
+                accepted = 0;
+                sem_post(&sc);
+            }
+
+            continue;
+        }
+
+        int queue= (int) floor (msg.nodo/ProcesosNodo);
+        int dest=msg.nodo;
+        printf("[Node %i - Process %i] Received Request. Process: %i, Ticket: %i, Queue: %i \n", idNodo, id, msg.nodo, msg.ticket, vecinos[queue]);
+
+        // Aquí movemos variables compartidas!!
+        sem_wait(&mutex);
+
+        if (max_ticket < msg.ticket) max_ticket = msg.ticket;
+        if (!quiero || msg.ticket < mi_ticket || (msg.ticket == mi_ticket && msg.nodo < id )) {
+            printf("[Node %i - Process %i] \033[0;32mAccepted Request: Process: %i, Ticket: %i, Queue: %i\033[0m\n\n", idNodo, id, msg.nodo, msg.ticket, vecinos[queue]);
+            msg.mtype = 2;
+            msg.dest = dest;
+            msg.nodo = id;
+            msg.ticket = 0;
+
+            msgsnd(vecinos[queue], &msg, sizeof(int)*3 , 0);
+        } else {
+            pendientes[n_pendientes++]=dest;
+            printf("[Node %i - Process %i] New waiting process %i\n\n", idNodo, id, dest);
+        }       
+
+        // Hemos terminado de usar variables compartidas!!
+        sem_post(&mutex);
     }
 
     pthread_exit(NULL);
@@ -81,7 +90,8 @@ void *receptor( void *params){
 
 int main (int argc, char* argv[]){   
     sem_init(&mutex, 0, 1);
-    
+    sem_init(&sc, 0, 0);
+
     int id= atoi(argv[1]);
     int firstq= atoi(argv[2]);
     int numNodos= atoi(argv[3]);
@@ -135,18 +145,9 @@ int main (int argc, char* argv[]){
         }
         
         printf("[Node %i - Process %i] Waiting...\n", idNodo, id);
-        for (int i = 0; i < ((numNodos*ProcesosNodo)-1); i++)
-        {
-            struct msgbuf msg; 
-
-            ssize_t x = msgrcv(vecinos[idNodo/ProcesosNodo], &msg, sizeof(int)*3, 2, 0);
-            if (x == -1) printf("\033[0;31mError on msgrcv(). Queue: %i\033[0m\n", vecinos[idNodo/ProcesosNodo]);  
-            if (msg.dest != id){
-                i--;
-                msgsnd(vecinos[idNodo/ProcesosNodo],&msg, sizeof(int)*3,0);
-            }
-                     
-        }
+        
+        // Esperamos por recibir las accepts
+        sem_wait(&sc);
 
         //SECCION CRITICA
         printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i\n", idNodo, id,  mi_ticket);
