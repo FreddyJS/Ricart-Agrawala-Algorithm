@@ -8,6 +8,7 @@
 #include <unistd.h> // necesaria para ejecutar fork()
 #include <string.h>
 #include <signal.h>
+#include <sys/time.h>
 
 int NumNodos;
 int ProcesosNodo;
@@ -36,7 +37,7 @@ void nodo (int id, int firstq, int numNodos){
 }
 
 int main (int argc, char* argv[]) {
-
+    struct timeval stop_time, start_time;
     NumNodos= atoi(argv[1]);
     ProcesosNodo=atoi(argv[2]);
     int ID [NumNodos];
@@ -52,6 +53,7 @@ int main (int argc, char* argv[]) {
 	    }
     }
 
+    gettimeofday(&start_time, NULL);
     pid_t childs[NumNodos];
 
     for (int i=0; i<NumNodos; i++){
@@ -76,5 +78,7 @@ int main (int argc, char* argv[]) {
     
     while (wait(NULL)!=-1);  //Esperamos a que todos los hijos mueran
     deleteq(ID);    //Borramos los buzones 
-  
+    gettimeofday(&stop_time, NULL);
+
+    printf("\n[INIT] \033[0;33mExecuted %lu s\033[0m\n", (stop_time.tv_sec - start_time.tv_sec) + (stop_time.tv_usec - start_time.tv_usec)/1000000); 
 }

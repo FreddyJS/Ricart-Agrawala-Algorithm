@@ -4,10 +4,15 @@
 #include <signal.h>
 #include <stdio.h>
 #include <math.h> //floor -> redondeo hacia bajo
+#include <sys/shm.h> 
+#include <string.h>
+#include <unistd.h>
 
 #include "tickets.h" // Incluye lo necesario para las colas y la struct ticket
 
 sem_t mutex, sc, sem_recv;
+sem_t *sems_mem;
+ticket_t *tickets_mem;
 
 int *pendientes;
 int mi_ticket;
@@ -45,17 +50,19 @@ void *receptor( void *params){
     int idNodo= data->idNodo;
     int numNodo= data->numNodo;
     int ProcesosNodo= data->ProcesosNodo;
+    int maxpos = ProcesosNodo*2 -1;
+    int pos = id - idNodo;
     int accepted = 0;
+
         
     ticket_t msg;
     while(1) {
-        msgrcv(vecinos[idNodo/ProcesosNodo], &msg, sizeof(int)*3, 0, 0);
+        sem_wait(&sems_mem[pos]);
+        //printf("\033[0;31m[Node %i - Process %i] Waited the sem\033[0m\n", idNodo, id);
+        memcpy(&msg, &tickets_mem[id - idNodo], sizeof(ticket_t));
+        //sem_post(&sems_mem[id - idNodo]);
+        sem_post(&sems_mem[maxpos - pos]); 
 
-        if (msg.dest != id) {
-            msgsnd(vecinos[idNodo/ProcesosNodo],&msg, sizeof(int)*3,0);
-            continue;
-        }
-        
         if (msg.mtype == 2) {
             accepted++;
             if (accepted == ((numNodo*ProcesosNodo)-1)) {
@@ -67,7 +74,7 @@ void *receptor( void *params){
         }
 
         int queue= (int) floor (msg.nodo/ProcesosNodo);
-        int dest=msg.nodo;
+        int dest=msg.nodo; // proceso que pidio
         printf("[Node %i - Process %i] Received Request. Process: %i, Ticket: %i, Queue: %i \n", idNodo, id, msg.nodo, msg.ticket, vecinos[queue]);
 
         // Aquí movemos variables compartidas!!
@@ -104,7 +111,12 @@ int main (int argc, char* argv[]){
     int numNodos= atoi(argv[3]);
     int ProcesosNodo = atoi(argv[4]);
     int idNodo= atoi(argv[5]);
-   
+    int sems_key =atoi(argv[6]);
+    int data_key =atoi(argv[7]);
+
+    sems_mem = shmat(sems_key, NULL, 0);
+    tickets_mem = shmat(data_key, NULL, 0);
+
     int vecinos[numNodos];
     pthread_t thread;
     pendientes=malloc (((numNodos*ProcesosNodo)-1) * sizeof(int)); 
