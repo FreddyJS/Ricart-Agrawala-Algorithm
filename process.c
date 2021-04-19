@@ -1,13 +1,13 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <pthread.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
 #include <semaphore.h>
-#include<math.h> //floor -> redondeo hacia bajo
+#include <pthread.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <stdio.h>
+#include <math.h> //floor -> redondeo hacia bajo
 
-sem_t mutex, sc;
+#include "tickets.h" // Incluye lo necesario para las colas y la struct ticket
+
+sem_t mutex, sc, sem_recv;
 
 int *pendientes;
 int mi_ticket;
@@ -16,7 +16,6 @@ int quiero=0;
 int n_pendientes=0;
 
 struct params{
-
 	int *vecinos;
 	int id;
     int idNodo;
@@ -24,12 +23,19 @@ struct params{
     int numNodo;
 }params;
 
-struct msgbuf{
-	long mtype; // Tipo 1= request, Tipo 2= reply , Tipo 3= end.
-	int nodo;
-    int ticket;
-    int dest;
-};
+void cont_handler() {
+    sem_post(&sem_recv);
+}
+
+void init_sighandler() {
+    struct sigaction sigact;
+
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = SA_RESTART;
+    sigact.sa_handler = cont_handler;
+
+    sigaction(SIGCONT, &sigact, NULL);
+}
 
 void *receptor( void *params){
     struct params *data= (struct params *)params;
@@ -41,7 +47,7 @@ void *receptor( void *params){
     int ProcesosNodo= data->ProcesosNodo;
     int accepted = 0;
         
-    struct msgbuf msg;
+    ticket_t msg;
     while(1) {
         msgrcv(vecinos[idNodo/ProcesosNodo], &msg, sizeof(int)*3, 0, 0);
 
@@ -49,7 +55,7 @@ void *receptor( void *params){
             msgsnd(vecinos[idNodo/ProcesosNodo],&msg, sizeof(int)*3,0);
             continue;
         }
-
+        
         if (msg.mtype == 2) {
             accepted++;
             if (accepted == ((numNodo*ProcesosNodo)-1)) {
@@ -91,6 +97,7 @@ void *receptor( void *params){
 int main (int argc, char* argv[]){   
     sem_init(&mutex, 0, 1);
     sem_init(&sc, 0, 0);
+    sem_init(&sem_recv, 0, 0);
 
     int id= atoi(argv[1]);
     int firstq= atoi(argv[2]);
@@ -114,6 +121,8 @@ int main (int argc, char* argv[]){
     params.numNodo = numNodos;
     params.ProcesosNodo = ProcesosNodo;
 
+    //init_sighandler();
+
     if(pthread_create(&thread, NULL, (void *)receptor, (void *)&params) != 0) {
         printf("No se ha podido crear el hilo\n"); 
         exit(0);
@@ -131,7 +140,7 @@ int main (int argc, char* argv[]){
         for (int i = 0; i < numNodos*ProcesosNodo; i++)
         {
             if(i != id){
-                struct msgbuf msg;
+                ticket_t msg;
                 int destQ = (int)floor(i/ProcesosNodo);
                 msg.mtype = 1;
                 msg.nodo = id;
@@ -144,9 +153,8 @@ int main (int argc, char* argv[]){
 
         }
         
-        printf("[Node %i - Process %i] Waiting...\n", idNodo, id);
-        
         // Esperamos por recibir las accepts
+        printf("[Node %i - Process %i] Waiting...\n", idNodo, id);
         sem_wait(&sc);
 
         //SECCION CRITICA
@@ -162,13 +170,13 @@ int main (int argc, char* argv[]){
 
         for (int i = 0; i < n_pendientes; i++)
         {
-            struct msgbuf msg;
+            ticket_t msg;
             int nodoDest = (int)floor(pendientes[i]/ProcesosNodo);
             msg.mtype = 2;
             msg.nodo = id;
             msg.ticket = 0;
             msg.dest = pendientes[i];
-            printf("[Node %i - Process %i] \033[0;32mSending Reply Waiting  Process: %i, Queue: %i \033[0m\n\n", idNodo, id, pendientes[i], vecinos[nodoDest]);
+            printf("[Node %i - Process %i] \033[0;32mSending Reply Waiting Process: %i, Queue: %i \033[0m\n", idNodo, id, pendientes[i], vecinos[nodoDest]);
             msgsnd(vecinos[nodoDest],&msg, sizeof(int)*3,0); 
         }
         n_pendientes=0;

@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
 #include <stdlib.h>
 #include <sys/msg.h>
 #include <unistd.h> // necesaria para ejecutar fork()
 #include <string.h>
+#include <math.h>
 #include <signal.h>
 
+#include "tickets.h"
+
+int end = 0;
 
 void process ( int id, int firstq, int numNodos,int ProcesosNodo,int idNodo){
     char param1[20] = "";
@@ -28,7 +29,7 @@ void process ( int id, int firstq, int numNodos,int ProcesosNodo,int idNodo){
 }
 
 void end_handler(int signo) {
-
+    end = 1;
 }
 
 int main (int argc, char* argv[]){
@@ -45,7 +46,7 @@ int main (int argc, char* argv[]){
 
         if (child==0) process(id+i,firstq,NumNodos,ProcesosNodo,id);      
         childs[i] = child;
-        printf("[Nodo: %i] Created process: %i\n",id, id+i);
+        printf("[Node %i]  Created process: %i\n",id, id+i);
     }
 
     struct sigaction sigact;
@@ -57,6 +58,21 @@ int main (int argc, char* argv[]){
     sigaction(SIGUSR1, &sigact, NULL); // Create a handler so the program not exit when SIGUSR1 arrives
 
     pause(); // After receive SIGUSR1 from the init process we can delete all the childs
+
+    /*
+    ticket_t msg;
+    int myqueue = firstq + (int)floor(id/ProcesosNodo);
+    
+    sleep(1);
+    while (!end)
+    {
+        msgrcv(myqueue, &msg, sizeof(int)*3, 0, 0);
+        int process = msg.dest;
+        msgsnd(myqueue, &msg, sizeof(int)*3, 0);
+        kill(childs[process - id], SIGCONT);
+        pause();
+    }
+    */
 
     for (size_t i = 0; i < ProcesosNodo; i++)
     {

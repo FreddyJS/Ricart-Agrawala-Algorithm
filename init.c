@@ -46,7 +46,7 @@ int main (int argc, char* argv[]) {
 	    ID[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT); 
 	
 	    if (ID[i] == -1){
-		    printf("No se ha podido crear eñ buzón.\n");
+		    printf("No se ha podido crear el buzón.\n");
 		
             return -1;
 	    }
