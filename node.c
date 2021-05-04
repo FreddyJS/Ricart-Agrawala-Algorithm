@@ -50,7 +50,6 @@ int main (int argc, char* argv[]){
     ticket_t* tickets_mem = (ticket_t *)shmat(data_key, NULL, 0);
     sem_t* sems_mem = (sem_t *)shmat(sems_key, NULL, 0);
 
-
     for (int i = 0; i < ProcesosNodo; i++)
     {
         sem_init(&sems_mem[i], 1, 0);
@@ -84,27 +83,50 @@ int main (int argc, char* argv[]){
 
     sigaction(SIGUSR1, &sigact, NULL); // Create a handler so the program not exit when SIGUSR1 arrives
 
-    ticket_t msg;
+    ticket_t request;
+    ticketok_t response;
+
     int myqueue = firstq + (int)floor(id/ProcesosNodo);
     
     while (!end)
     {
-        msgrcv(myqueue, &msg, sizeof(int)*3, 0, 0);
-        int process = msg.dest;
-        int pos = process - id;
-        int maxpos = ProcesosNodo*2 -1;
-        //printf("[Node %i] \033[0;33m Semaforos: wait(%i); post(%i); \033[0m\n", id, maxpos -pos, pos);
-        
-        // Si puedo escribir (zona de memoria libre o ya usada) 5 procesos --> [0, 4] [5, 9]
-        sem_wait(&sems_mem[maxpos - pos]); 
+        // Receive a message from the queue, th size is the max size of the message
+        // So we can set it to the bigger type
+        msgrcv(myqueue, &request, sizeof(int)*2, 0, 0);
+        int maxpos = ProcesosNodo*2 -1; // max position of the array of sems
 
-        tickets_mem[pos].dest = process;
-        tickets_mem[pos].mtype = msg.mtype;
-        tickets_mem[pos].ticket = msg.ticket;
-        tickets_mem[pos].nodo = msg.nodo;
+        if (request.mtype == 2) {
+            // If the message is type 2 means it is a response
+            int pos = response.dest - id; // Position of the array in the shared memory
+            
+            // Copy the data to the ticketok_t
+            memcpy(&response, &request, sizeof(ticketok_t));
 
-        // Avisar a process
-        sem_post(&sems_mem[pos]);
+            sem_wait(&sems_mem[maxpos - pos]);  // wait for the child to be ready to read data
+
+            memcpy(&tickets_mem[pos], &response, sizeof(ticketok_t)); // Copy the data so the child can read it
+            
+            sem_post(&sems_mem[pos]);  // Post to the child
+
+        } else {
+            // Avisar a todos los procesos del nodo
+            for (size_t i = id; i < id+ProcesosNodo; i++)
+            {
+                if (i == request.process) continue;
+                int pos = i - id;
+                
+                //printf("[Node %i] \033[0;33m Semaforos: wait(%i); post(%i); \033[0m\n", id, maxpos -pos, pos);
+                
+                sem_wait(&sems_mem[maxpos - pos]);
+
+                tickets_mem[pos].mtype = request.mtype;
+                tickets_mem[pos].ticket = request.ticket;
+                tickets_mem[pos].process = request.process;
+                /* code */
+                sem_post(&sems_mem[pos]);
+            }
+        }
+
     }
 
     for (size_t i = 0; i < ProcesosNodo; i++)

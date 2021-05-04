@@ -7,10 +7,13 @@
 
 typedef struct ticket {
 	long mtype; // Tipo 1= request, Tipo 2= reply , Tipo 3= end.
-	int nodo;
     int ticket;
-    int dest;
+	int process;
 } ticket_t;
 
+typedef struct ticketok {
+    long mtype;
+    int dest;
+} ticketok_t;
 
 #endif
