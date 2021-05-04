@@ -7,6 +7,7 @@
 #include <sys/msg.h>
 #include <unistd.h> // necesaria para ejecutar fork()
 #include <string.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <sys/time.h>
 
@@ -78,6 +79,7 @@ int main (int argc, char* argv[]) {
     
     while (wait(NULL)!=-1);  //Esperamos a que todos los hijos mueran
     deleteq(ID);    //Borramos los buzones 
+
     gettimeofday(&stop_time, NULL);
 
     printf("\n[INIT] \033[0;33mExecuted %lu s\033[0m\n", (stop_time.tv_sec - start_time.tv_sec) + (stop_time.tv_usec - start_time.tv_usec)/1000000); 
