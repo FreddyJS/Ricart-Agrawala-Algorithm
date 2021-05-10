@@ -6,13 +6,13 @@
 #include <sys/types.h>
 
 typedef struct ticket {
-	long mtype; // Tipo 1= request, Tipo 2= reply , Tipo 3= end.
+	long mtype; // Tipo 1 = Request 
     int ticket;
 	int process;
 } ticket_t;
 
 typedef struct ticketok {
-    long mtype;
+    long mtype; // Type 2 = OK
     int dest;
 } ticketok_t;
 
