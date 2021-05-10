@@ -37,7 +37,7 @@ void nodo (int nodeId, int firstq, int numberOfNodes){
     
     execl("./node", "./node", nodeId_str, firstq_str, numberOfNodes_str, proccessPerNode_str, NULL);
 
-    exit (0);
+    exit(0);
 }
 
 int main (int argc, char* argv[]) {
@@ -81,7 +81,7 @@ int main (int argc, char* argv[]) {
     }
     
     while (wait(NULL)!=-1);  //Esperamos a que todos los hijos mueran
-    deleteq(queues);    //Borramos los buzones 
+    deleteq(queues);         //Borramos los buzones 
 
     gettimeofday(&stop_time, NULL);
     printf("\n[INIT] \033[0;33mExecuted %lu s\033[0m\n", (stop_time.tv_sec - start_time.tv_sec) + (stop_time.tv_usec - start_time.tv_usec)/1000000); 
