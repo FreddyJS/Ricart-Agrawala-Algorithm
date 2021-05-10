@@ -50,6 +50,13 @@ int main (int argc, char* argv[]) {
     for (int i=0; i < numberOfNodes; i++){
 	    queues[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT); 
 	
+        if (i > 1) {
+            if (queues[i-1] != queues[i]-1) {
+                printf("Las colas están desordenadas!");
+                exit(-1);
+            }
+        }
+
 	    if (queues[i] == -1){
 		    printf("No se ha podido crear el buzón.\n");
             return -1;

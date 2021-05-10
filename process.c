@@ -6,6 +6,7 @@
 #include <sys/shm.h> 
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "tickets.h" // Incluye lo necesario para las colas y la struct ticket
 
@@ -135,6 +136,9 @@ int main (int argc, char* argv[]){
         mi_ticket=max_ticket+1;
         sem_post(&mutex);
 
+        struct timeval stop_time, start_time;
+        gettimeofday(&start_time, NULL);
+
         for (int i = 0; i < numberOfNodes; i++)
         {
             ticket_t msg;
@@ -144,9 +148,11 @@ int main (int argc, char* argv[]){
 
             msgsnd(vecinos[i],&msg, sizeof(int)*2,0);
         }
-        
+
         // Esperamos por recibir todos los oks
         sem_wait(&sc);
+        gettimeofday(&stop_time, NULL);
+        printf("\n[Node %i - Process %i] \033[0;34mSynced in %lu ms\033[0m\n", nodeId/numberOfNodes, id, (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000); 
 
         //SECCION CRITICA
         printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i\n", nodeId/numberOfNodes, id,  mi_ticket);
