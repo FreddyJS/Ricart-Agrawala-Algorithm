@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <stdio.h>
-#include <math.h> //floor -> redondeo hacia bajo
 #include <sys/shm.h> 
 #include <string.h>
 #include <unistd.h>
@@ -23,8 +22,8 @@ int n_pendientes=0;
 struct params{
 	int *vecinos;
 	int id;
-    int idNodo;
-    int ProcesosNodo;
+    int nodeId;
+    int processPerNode;
     int numNodo;
 }params;
 
@@ -47,11 +46,11 @@ void *receptor( void *params){
 
     int *vecinos= data->vecinos;
     int id= data->id;
-    int idNodo= data->idNodo;
+    int nodeId= data->nodeId;
     int numNodo= data->numNodo;
-    int ProcesosNodo= data->ProcesosNodo;
-    int maxpos = ProcesosNodo*2 -1;
-    int pos = id - idNodo;
+    int processPerNode= data->processPerNode;
+    int maxpos = processPerNode*2 -1;
+    int pos = id - nodeId;
     int accepted = 0;
 
         
@@ -60,15 +59,12 @@ void *receptor( void *params){
 
     while(1) {
         sem_wait(&sems_mem[pos]);
-        //printf("\033[0;31m[Node %i - Process %i] Waited the sem\033[0m\n", idNodo, id);
-        memcpy(&request, &tickets_mem[id - idNodo], sizeof(ticket_t));
+        memcpy(&request, &tickets_mem[id - nodeId], sizeof(ticket_t));
         sem_post(&sems_mem[maxpos - pos]); 
         
-        //sem_post(&sems_mem[id - idNodo]);
-
         if (request.mtype == 2) {
             accepted++;
-            if (accepted == ((numNodo*ProcesosNodo)-1)) {
+            if (accepted == ((numNodo*processPerNode)-1)) {
                 accepted = 0;
                 sem_post(&sc);
             }
@@ -76,26 +72,21 @@ void *receptor( void *params){
             continue;
         }
 
-        int queue = (int) floor (request.process/ProcesosNodo);
+        int queue = request.process/processPerNode;
         int proceso_origen = request.process; // proceso que pidio
-        //printf("[Node %i - Process %i] Received Request. Process: %i, Ticket: %i, Queue: %i \n", idNodo, id, msg.nodo, msg.ticket, vecinos[queue]);
 
-        // Aquí movemos variables compartidas!!
         sem_wait(&mutex);
 
         if (max_ticket < request.ticket) max_ticket = request.ticket;
         if (!quiero || request.ticket < mi_ticket || (request.ticket == mi_ticket && request.process < id )) {
-            //printf("[Node %i - Process %i] \033[0;32mAccepted Request: Process: %i, Ticket: %i, Queue: %i\033[0m\n\n", idNodo, id, request.nodo, request.ticket, vecinos[queue]);
             response.mtype = 2;
             response.dest = proceso_origen;
 
             msgsnd(vecinos[queue], &response, sizeof(int), 0);
         } else {
             pendientes[n_pendientes++] = proceso_origen;
-            //printf("[Node %i - Process %i] New waiting process %i\n\n", idNodo, id, dest);
         }       
 
-        // Hemos terminado de usar variables compartidas!!
         sem_post(&mutex);
     }
 
@@ -107,41 +98,35 @@ int main (int argc, char* argv[]){
     sem_init(&sc, 0, 0);
     sem_init(&sem_recv, 0, 0);
 
-    int id= atoi(argv[1]);
-    int firstq= atoi(argv[2]);
-    int numNodos= atoi(argv[3]);
-    int ProcesosNodo = atoi(argv[4]);
-    int idNodo= atoi(argv[5]);
-    int sems_key =atoi(argv[6]);
-    int data_key =atoi(argv[7]);
+    int id = atoi(argv[1]);
+    int firstq = atoi(argv[2]);
+    int numberOfNodes = atoi(argv[3]);
+    int processPerNode = atoi(argv[4]);
+    int nodeId = atoi(argv[5]);
+    int sems_key = atoi(argv[6]);
+    int data_key = atoi(argv[7]);
 
     sems_mem = shmat(sems_key, NULL, 0);
     tickets_mem = shmat(data_key, NULL, 0);
 
-    int vecinos[numNodos];
-    pthread_t thread;
-    pendientes=malloc (((numNodos*ProcesosNodo)-1) * sizeof(int)); 
+    int vecinos[numberOfNodes];
+    pendientes = malloc (((numberOfNodes*processPerNode)-1) * sizeof(int)); 
 
-    for (int j=0; j < numNodos;j++){
+    for (int j=0; j < numberOfNodes;j++){
         vecinos[j] = firstq+j;
     }
-
-    //printf("[Node %i - Process %i] \033[0;34mProcess started. Queue: %i. Nodes: %i\033[0m\n", idNodo, id, vecinos[idNodo/ProcesosNodo], numNodos);
     
     params.id = id;
     params.vecinos = vecinos;
-    params.idNodo = idNodo;
-    params.numNodo = numNodos;
-    params.ProcesosNodo = ProcesosNodo;
+    params.nodeId = nodeId;
+    params.numNodo = numberOfNodes;
+    params.processPerNode = processPerNode;
 
-    //init_sighandler();
-
+    pthread_t thread;
     if(pthread_create(&thread, NULL, (void *)receptor, (void *)&params) != 0) {
         printf("No se ha podido crear el hilo\n"); 
         exit(0);
     }
-
-    // Pedir entrada a la seccion critica
 
     while (1)
     {   
@@ -150,40 +135,35 @@ int main (int argc, char* argv[]){
         mi_ticket=max_ticket+1;
         sem_post(&mutex);
 
-        for (int i = 0; i < numNodos; i++)
+        for (int i = 0; i < numberOfNodes; i++)
         {
             ticket_t msg;
             msg.mtype = 1;
             msg.process = id;
             msg.ticket = mi_ticket;
-            //printf("[Node %i - Process %i] \033[0;36mRequest sended: Ticket: %i, ToQueue: %i ToProcess: %i\033[0m \n", idNodo, id, msg.ticket, vecinos[destQ], msg.dest);
+
             msgsnd(vecinos[i],&msg, sizeof(int)*2,0);
         }
         
-        // Esperamos por recibir las accepts
-        //printf("[Node %i - Process %i] Waiting...\n", idNodo, id);
+        // Esperamos por recibir todos los oks
         sem_wait(&sc);
 
         //SECCION CRITICA
-        printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i\n", idNodo, id,  mi_ticket);
+        printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i\n", nodeId/numberOfNodes, id,  mi_ticket);
 
         // Fuera de la sección crítica
         sem_wait(&mutex);
         quiero=0;
         sem_post(&mutex);
-        printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica.\033[0m Ticket: %i\n", idNodo, id,  mi_ticket);
-
-        // Nunca habrá un nuevo pendiente ya que quiero = 0
-        //printf("[Node %i - Process %i] Fuera de la sección crítica\n\n", idNodo, id);
+        printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i\n", nodeId/numberOfNodes, id,  mi_ticket);
 
         for (int i = 0; i < n_pendientes; i++)
         {
             ticketok_t msg;
-            int nodoDest = (int)floor(pendientes[i]/ProcesosNodo);
+            int nodoDest = pendientes[i]/processPerNode;
             msg.mtype = 2;
             msg.dest = pendientes[i];
             
-            //printf("[Node %i - Process %i] \033[0;32mSending Reply Waiting Process: %i, Queue: %i \033[0m\n", idNodo, id, pendientes[i], vecinos[nodoDest]);
             msgsnd(vecinos[nodoDest],&msg, sizeof(int),0); 
         }
         n_pendientes=0;

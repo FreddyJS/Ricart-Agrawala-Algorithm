@@ -4,4 +4,4 @@ all:
 	gcc process.c -lpthread -o process
 
 run:
-	./init 100 100
+	./init 5 5
