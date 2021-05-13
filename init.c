@@ -52,7 +52,7 @@ int main (int argc, char* argv[]) {
 	
         if (i > 1) {
             if (queues[i-1] != queues[i]-1) {
-                printf("Las colas están desordenadas!");
+                printf("\033[0;31m¡Las colas están desordenadas!\033[0m\n");
                 exit(-1);
             }
         }

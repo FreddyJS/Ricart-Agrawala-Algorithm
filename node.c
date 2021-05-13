@@ -10,31 +10,46 @@
 
 #include "tickets.h"
 
+typedef struct child {
+    pid_t pid;
+    int type;
+} child_t;
+
 int end = 0;
 
-void process ( int id, int firstq, int numberOfNodes,int processPerNode,int idNodo, int sems_key, int data_key){
-    char param1[20] = "";
-    sprintf(param1, "%i", id);
-    char param2[20] = "";
-    sprintf(param2, "%i", firstq); //queues[0]
-    char param3[20] = "";
-    sprintf(param3, "%i", numberOfNodes);
-    char param4[20] = "";
-    sprintf(param4, "%i",processPerNode);
-    char param5[20] = "";
-    sprintf(param5, "%i",idNodo);
-    char param6[20] = "";
-    sprintf(param6, "%i",sems_key);
-    char param7[20] = "";
-    sprintf(param7, "%i",data_key);
+void process ( int id, int type, int firstq, int numberOfNodes,int processPerNode,int idNodo, int sems_key, int data_key){
+    char id_str[20] = "";
+    sprintf(id_str, "%i", id);
+    char type_str[20] = "";
+    sprintf(type_str, "%i", type);
+    char firstq_str[20] = "";
+    sprintf(firstq_str, "%i", firstq); //queues[0]
+    char numOfNodes_str[20] = "";
+    sprintf(numOfNodes_str, "%i", numberOfNodes);
+    char processPerNode_str[20] = "";
+    sprintf(processPerNode_str, "%i",processPerNode);
+    char idNodo_str[20] = "";
+    sprintf(idNodo_str, "%i",idNodo);
+    char sems_key_str[20] = "";
+    sprintf(sems_key_str, "%i",sems_key);
+    char data_key_str[20] = "";
+    sprintf(data_key_str, "%i",data_key);
 
-    execl("./process", "./process", param1, param2, param3, param4, param5, param6, param7, NULL);
+    execl("./process", "./process", id_str, type_str, firstq_str, numOfNodes_str, processPerNode_str, idNodo_str, sems_key_str, data_key_str, NULL);
 
     exit (0);
 }
 
 void end_handler(int signo) {
     end = 1;
+}
+
+void autoAcceptTicket(int dest, int queue) {
+    ticketok_t msg;
+    msg.mtype = TICKETOK;
+    msg.dest = dest;
+            
+    msgsnd(queue, &msg, sizeof(int), 0); 
 }
 
 int main (int argc, char* argv[]){
@@ -61,15 +76,20 @@ int main (int argc, char* argv[]){
         sem_init(&sems_mem[i], 1, 1);
     }
 
-    pid_t childs[processPerNode];
+    child_t childs[processPerNode];
 
     for (int i=0; i<processPerNode; i++){
+        int type = EVENTOS;
+        if (i > processPerNode/4) type = GRADAS;
+        if (i > 2*processPerNode/4) type = PRERESERVAS;
+        if (i > 3*processPerNode/4) type = ADMIN;
 
         pid_t child=fork();
 
-        if (child==0) process(nodeId+i,firstq,numberOfNodes,processPerNode,nodeId,sems_key,data_key);      
-        childs[i] = child;
-        //printf("[Node %i]  Created process: %i\n",id, id+i);
+        if (child==0) process(nodeId+i, type, firstq,numberOfNodes,processPerNode,nodeId,sems_key,data_key);      
+        childs[i].pid = child;
+        childs[i].type = type;
+
     }
 
     struct sigaction sigact;
@@ -92,9 +112,9 @@ int main (int argc, char* argv[]){
     {
         // Receive a message from the queue, th size is the max size of the message
         // So we can set it to the bigger type
-        msgrcv(myqueue, &request, sizeof(int)*2, 0, 0);
+        msgrcv(myqueue, &request, sizeof(int)*3, 0, 0);
 
-        if (request.mtype == 2) {
+        if (request.mtype == TICKETOK) {
             // Copy the data to the ticketok_t
             memcpy(&response, &request, sizeof(ticketok_t));
             int pos = response.dest - nodeId; // Position of the array in the shared memory
@@ -107,11 +127,16 @@ int main (int argc, char* argv[]){
             // Avisar a todos los procesos del nodo
             for (size_t i = nodeId; i < nodeId+processPerNode; i++)
             {
-                if (i == request.process) continue;
                 int pos = i - nodeId;
-                
-                //printf("[Node %i] \033[0;33m Semaforos: wait(%i); post(%i); \033[0m\n", id, maxpos -pos, pos);
-                
+
+                if (i == request.process) continue; // Skip the process who send the request
+
+                // Los lectores son automáticamente aceptados en lugar de preguntar a los demás lectores
+                if ((childs[pos].type == EVENTOS || childs[pos].type == GRADAS) && (request.type == EVENTOS || request.type == GRADAS)){
+                    autoAcceptTicket(request.process, firstq + request.process/processPerNode);
+                    continue;
+                } 
+                                
                 sem_wait(&sems_mem[maxpos - pos]);
                 memcpy(&tickets_mem[pos], &request, sizeof(ticket_t)); // Copy the data so the child can read it
                 sem_post(&sems_mem[pos]);
@@ -122,10 +147,10 @@ int main (int argc, char* argv[]){
 
     for (size_t i = 0; i < processPerNode; i++)
     {
-        kill(childs[i], SIGKILL);
+        kill(childs[i].pid, SIGKILL);
     }
     
-    while (wait(NULL)!=-1);
+    while (wait(NULL) != -1);
 
     return 0;
 }

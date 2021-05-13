@@ -5,10 +5,21 @@
 #include <sys/msg.h>
 #include <sys/types.h>
 
+#define TICKET 1
+#define TICKETOK 2
+
+#define ANULACIONES 6
+#define PAGOS 5
+#define ADMIN 4
+#define PRERESERVAS 3
+#define GRADAS 2
+#define EVENTOS 1
+
 typedef struct ticket {
 	long mtype; // Tipo 1 = Request 
     int ticket;
 	int process;
+    int type;
 } ticket_t;
 
 typedef struct ticketok {
