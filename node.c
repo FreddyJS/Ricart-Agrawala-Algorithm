@@ -127,9 +127,8 @@ int main (int argc, char* argv[]){
             // Avisar a todos los procesos del nodo
             for (size_t i = nodeId; i < nodeId+processPerNode; i++)
             {
-                int pos = i - nodeId;
-
                 if (i == request.process) continue; // Skip the process who send the request
+                int pos = i - nodeId;
 
                 // Los lectores son automáticamente aceptados en lugar de preguntar a los demás lectores
                 if ((childs[pos].type == EVENTOS || childs[pos].type == GRADAS) && (request.type == EVENTOS || request.type == GRADAS)){
@@ -147,10 +146,13 @@ int main (int argc, char* argv[]){
 
     for (size_t i = 0; i < processPerNode; i++)
     {
-        kill(childs[i].pid, SIGKILL);
+        kill(childs[i].pid, SIGUSR1);
     }
     
     while (wait(NULL) != -1);
+
+    free(sems_mem);
+    free(tickets_mem);
 
     return 0;
 }

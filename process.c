@@ -10,7 +10,7 @@
 
 #include "tickets.h" // Incluye lo necesario para las colas y la struct ticket
 
-sem_t mutex, sc, sem_recv;
+sem_t mutex, sc;
 sem_t *sems_mem;
 ticket_t *tickets_mem;
 
@@ -19,6 +19,7 @@ int mi_ticket;
 int max_ticket=0;
 int quiero=0;
 int n_pendientes=0;
+int end=0;
 
 struct params{
 	int *vecinos;
@@ -30,7 +31,7 @@ struct params{
 }params;
 
 void cont_handler() {
-    sem_post(&sem_recv);
+    end = 1;
 }
 
 void init_sighandler() {
@@ -40,7 +41,7 @@ void init_sighandler() {
     sigact.sa_flags = SA_RESTART;
     sigact.sa_handler = cont_handler;
 
-    sigaction(SIGCONT, &sigact, NULL);
+    sigaction(SIGUSR1, &sigact, NULL);
 }
 
 void *receptor( void *params){
@@ -59,7 +60,7 @@ void *receptor( void *params){
     ticket_t request;
     ticketok_t response;
 
-    while(1) {
+    while(!end) {
         sem_wait(&sems_mem[pos]);
         memcpy(&request, &tickets_mem[id - nodeId], sizeof(ticket_t));
         sem_post(&sems_mem[maxpos - pos]); 
@@ -113,7 +114,6 @@ void *receptor( void *params){
 int main (int argc, char* argv[]){   
     sem_init(&mutex, 0, 1);
     sem_init(&sc, 0, 0);
-    sem_init(&sem_recv, 0, 0);
 
     int id = atoi(argv[1]);
     int type = atoi(argv[2]);
@@ -147,7 +147,7 @@ int main (int argc, char* argv[]){
         exit(0);
     }
 
-    while (1)
+    while (!end)
     {   
         sem_wait(&mutex);
         quiero=1;
@@ -176,6 +176,8 @@ int main (int argc, char* argv[]){
         //SECCION CRITICA
         printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i, Type: %i\n", nodeId/numberOfNodes, id,  mi_ticket, type);
 
+        sleep(SCTIME);
+
         // Fuera de la sección crítica
         sem_wait(&mutex);
         quiero=0;
@@ -193,6 +195,8 @@ int main (int argc, char* argv[]){
         }
         n_pendientes=0;
     }
+
+    free(pendientes);
     
     return 0;
 }
