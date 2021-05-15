@@ -5,7 +5,7 @@
 #include <sys/msg.h>
 #include <sys/types.h>
 
-#define SCTIME 1
+#define SCTIME 0
 
 #define TICKET 1
 #define TICKETOK 2
@@ -20,6 +20,7 @@
 typedef struct ticket {
 	long mtype; // Tipo 1 = Request 
     int ticket;
+    int node;
 	int process;
     int type;
 } ticket_t;

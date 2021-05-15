@@ -52,7 +52,8 @@ int main (int argc, char* argv[]) {
 	
         if (i > 1) {
             if (queues[i-1] != queues[i]-1) {
-                printf("\033[0;31m¡Las colas están desordenadas!\033[0m\n");
+                printf("\033[0;31m¡Las colas están desordenadas!\033[0m (Eliminando...)\n");
+                system("ipcrm -a");
                 exit(-1);
             }
         }
@@ -70,7 +71,7 @@ int main (int argc, char* argv[]) {
     for (int i=0; i < numberOfNodes; i++){
 
         pid_t child = fork();
-        int nodeId = i*processPerNode;
+        int nodeId = i;
         if (child == 0) nodo(nodeId, queues[0], numberOfNodes); // The child never return here
 
         childs[i] = child;

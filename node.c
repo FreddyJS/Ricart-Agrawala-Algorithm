@@ -79,14 +79,15 @@ int main (int argc, char* argv[]){
     child_t childs[processPerNode];
 
     for (int i=0; i<processPerNode; i++){
-        int type = EVENTOS;
+        int type = ADMIN;
         if (i > processPerNode/4) type = GRADAS;
         if (i > 2*processPerNode/4) type = PRERESERVAS;
         if (i > 3*processPerNode/4) type = ADMIN;
 
         pid_t child=fork();
+        int processID = i;
 
-        if (child==0) process(nodeId+i, type, firstq,numberOfNodes,processPerNode,nodeId,sems_key,data_key);      
+        if (child==0) process(processID, type, firstq,numberOfNodes,processPerNode,nodeId,sems_key,data_key);      
         childs[i].pid = child;
         childs[i].type = type;
 
@@ -100,45 +101,45 @@ int main (int argc, char* argv[]){
 
     sigaction(SIGUSR1, &sigact, NULL); // Create a handler so the program not exit when SIGUSR1 arrives
 
-    printf("\033[0;34m[Node %i] Ready to listen for messages!\033[0m\n", nodeId/numberOfNodes);
+    printf("\033[0;34m[Node %i] Ready to listen for messages!\033[0m\n", nodeId);
 
     ticket_t request;
     ticketok_t response;
 
-    int myqueue = firstq + nodeId/processPerNode;
+    int myqueue = firstq + nodeId;
     int maxpos = processPerNode*2 -1; // max position of the array of sems
     
     while (!end)
     {
         // Receive a message from the queue, th size is the max size of the message
         // So we can set it to the bigger type
-        msgrcv(myqueue, &request, sizeof(int)*3, 0, 0);
+        msgrcv(myqueue, &request, sizeof(int)*4, 0, 0);
 
         if (request.mtype == TICKETOK) {
             // Copy the data to the ticketok_t
             memcpy(&response, &request, sizeof(ticketok_t));
-            int pos = response.dest - nodeId; // Position of the array in the shared memory
+            int pos = response.dest; // Position of the array in the shared memory
 
             sem_wait(&sems_mem[maxpos - pos]);  // wait for the child to be ready to read data
             memcpy(&tickets_mem[pos], &response, sizeof(ticketok_t)); // Copy the data so the child can read it
             sem_post(&sems_mem[pos]);  // Post to the child
 
         } else {
+            //printf("[Node %i] \033[0;33mRecibida peticion de: node %i, process %i\033[0m\n", nodeId, request.node, request.process);
             // Avisar a todos los procesos del nodo
-            for (size_t i = nodeId; i < nodeId+processPerNode; i++)
+            for (int i = 0; i < processPerNode; i++)
             {
-                if (i == request.process) continue; // Skip the process who send the request
-                int pos = i - nodeId;
+                if (request.node == nodeId && i == request.process) continue; // Skip the process who send the request
 
                 // Los lectores son automáticamente aceptados en lugar de preguntar a los demás lectores
-                if ((childs[pos].type == EVENTOS || childs[pos].type == GRADAS) && (request.type == EVENTOS || request.type == GRADAS)){
-                    autoAcceptTicket(request.process, firstq + request.process/processPerNode);
+                if ((childs[i].type == EVENTOS || childs[i].type == GRADAS) && (request.type == EVENTOS || request.type == GRADAS)){
+                    autoAcceptTicket(request.process, firstq + request.node);
                     continue;
                 } 
                                 
-                sem_wait(&sems_mem[maxpos - pos]);
-                memcpy(&tickets_mem[pos], &request, sizeof(ticket_t)); // Copy the data so the child can read it
-                sem_post(&sems_mem[pos]);
+                sem_wait(&sems_mem[maxpos - i]);
+                memcpy(&tickets_mem[i], &request, sizeof(ticket_t)); // Copy the data so the child can read it
+                sem_post(&sems_mem[i]);
             }
         }
 

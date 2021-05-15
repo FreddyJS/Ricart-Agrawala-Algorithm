@@ -14,12 +14,19 @@ sem_t mutex, sc;
 sem_t *sems_mem;
 ticket_t *tickets_mem;
 
-int *pendientes;
+struct pendientes *pendientes;
 int mi_ticket;
 int max_ticket=0;
 int quiero=0;
 int n_pendientes=0;
 int end=0;
+
+struct pendientes
+{
+    int node;
+    int process;
+};
+
 
 struct params{
 	int *vecinos;
@@ -52,17 +59,18 @@ void *receptor( void *params){
     int nodeId= data->nodeId;
     int numNodo= data->numNodo;
     int processPerNode= data->processPerNode;
-    int maxpos = processPerNode*2 -1;
-    int pos = id - nodeId;
-    int accepted = 0;
     int mi_tipo = data->type;
+
+    int maxpos = processPerNode*2 -1;
+    int accepted = 0;
         
     ticket_t request;
     ticketok_t response;
+    int pos = id;
 
     while(!end) {
         sem_wait(&sems_mem[pos]);
-        memcpy(&request, &tickets_mem[id - nodeId], sizeof(ticket_t));
+        memcpy(&request, &tickets_mem[pos], sizeof(ticket_t));
         sem_post(&sems_mem[maxpos - pos]); 
         
         if (request.mtype == TICKETOK) {
@@ -75,34 +83,27 @@ void *receptor( void *params){
             continue;
         }
 
-        int queue = request.process/processPerNode;
-        int proceso_origen = request.process; // proceso que pidio
-
+        int queue = request.node;
         sem_wait(&mutex);
 
         if (max_ticket < request.ticket) max_ticket = request.ticket;
-        
-        /* Not working...
 
-        if (quiero && request.type < mi_tipo) { // win por tipo
-            pendientes[n_pendientes++] = proceso_origen;
-        } else if (quiero && request.type == mi_tipo && (mi_ticket < request.ticket || (mi_ticket == request.ticket && id < request.process))) { // win por id o ticket
-            pendientes[n_pendientes++] = proceso_origen;
-        } else {
-            response.mtype = 2;
-            response.dest = proceso_origen;
-
-            msgsnd(vecinos[queue], &response, sizeof(int), 0);
-        }
-        */
-
-        if (!quiero || request.ticket < mi_ticket || (request.ticket == mi_ticket && request.type > mi_tipo) || (request.ticket == mi_ticket && request.type == mi_tipo && request.process < id )) {
+        if (!quiero || request.ticket < mi_ticket || 
+            (request.ticket == mi_ticket && request.type > mi_tipo) || 
+            (request.ticket == mi_ticket && request.type == mi_tipo && request.node < nodeId) || 
+            (request.ticket == mi_ticket && request.type == mi_tipo && request.node == nodeId && request.process < id )) 
+        {
+           // Aceptando peticion
+           //printf("[Node %i - Process %i] \033[0;32mAccepted:\033[0m Ticket %i, Tipo %i, Node %i, Process %i\n", nodeId, id, request.ticket, request.type, request.node, request.process);
            response.mtype = TICKETOK;
-           response.dest = proceso_origen;
+           response.dest = request.process;
 
            msgsnd(vecinos[queue], &response, sizeof(int), 0);
         } else {
-            pendientes[n_pendientes++] = proceso_origen;
+            pendientes[n_pendientes].node = request.node;
+            pendientes[n_pendientes].process = request.process;
+            n_pendientes++;
+            //printf("[Node %i - Process %i] \033[0;36mPendiente:\033[0m Ticket %i, Tipo %i, Node %i, Process %i (%i)\n", nodeId, id, request.ticket, request.type, request.node, request.process, n_pendientes);
         }
 
         sem_post(&mutex);
@@ -128,7 +129,7 @@ int main (int argc, char* argv[]){
     tickets_mem = shmat(data_key, NULL, 0);
 
     int vecinos[numberOfNodes];
-    pendientes = malloc (((numberOfNodes*processPerNode)-1) * sizeof(int)); 
+    pendientes = malloc (((numberOfNodes*processPerNode)-1) * sizeof(struct pendientes)); 
 
     for (int j=0; j < numberOfNodes;j++){
         vecinos[j] = firstq+j;
@@ -157,24 +158,27 @@ int main (int argc, char* argv[]){
         struct timeval stop_time, start_time;
         gettimeofday(&start_time, NULL);
 
+        // Enviamos todas las peticiones
+        //printf("[Node %i - Process %i] There are %i nodes\n", nodeId, id, numberOfNodes);
+        ticket_t msg;
+        msg.mtype = TICKET;
+        msg.node = nodeId;
+        msg.process = id;
+        msg.ticket = mi_ticket;
+        msg.type = type;
+
         for (int i = 0; i < numberOfNodes; i++)
         {
-            ticket_t msg;
-            msg.mtype = TICKET;
-            msg.process = id;
-            msg.ticket = mi_ticket;
-            msg.type = type;
-
-            msgsnd(vecinos[i],&msg, sizeof(int)*3,0);
+            msgsnd(vecinos[i],&msg, sizeof(int)*4,0);
         }
 
         // Esperamos por recibir todos los oks
         sem_wait(&sc);
         gettimeofday(&stop_time, NULL);
-        printf("\n[Node %i - Process %i] \033[0;34mWaited %lu ms\033[0m\n", nodeId/numberOfNodes, id, (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000); 
+        printf("\n[Node %i - Process %i] \033[0;34mWaited %lu ms\033[0m\n", nodeId, id, (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000); 
 
         //SECCION CRITICA
-        printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i, Type: %i\n", nodeId/numberOfNodes, id,  mi_ticket, type);
+        printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
 
         sleep(SCTIME);
 
@@ -182,16 +186,19 @@ int main (int argc, char* argv[]){
         sem_wait(&mutex);
         quiero=0;
         sem_post(&mutex);
-        printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId/numberOfNodes, id,  mi_ticket, type);
+        printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
 
+        ticketok_t msgok;
+        printf("[Node %i - Process %i] \033[0;32mPendientes:\033[0m %i\n", nodeId, id, n_pendientes);
         for (int i = 0; i < n_pendientes; i++)
         {
-            ticketok_t msg;
-            int nodoDest = pendientes[i]/processPerNode;
-            msg.mtype = TICKETOK;
-            msg.dest = pendientes[i];
+            int nodoDest = pendientes[i].node;
+            msgok.mtype = TICKETOK;
+            msgok.dest = pendientes[i].process;
+            //printf("[Node %i - Process %i] \033[0;32mAceppted:\033[0m Node %i, Process %i\n", nodeId, id, pendientes[i].node, pendientes[i].process);
+
             
-            msgsnd(vecinos[nodoDest],&msg, sizeof(int),0); 
+            msgsnd(vecinos[nodoDest],&msgok, sizeof(int),0); 
         }
         n_pendientes=0;
     }
