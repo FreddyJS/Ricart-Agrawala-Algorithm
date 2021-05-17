@@ -23,6 +23,11 @@ int quiero=0;
 int dentro=0;
 int end=0;
 
+int numberOfNodes;
+int processPerNode;
+int times = 0;
+int type;
+
 struct pendientes
 {
     int node;
@@ -38,8 +43,19 @@ struct params{
     int type;
 }params;
 
-void cont_handler() {
+void end_handler() {
     end = 1;
+    
+    char buffer[55];
+    sprintf(buffer, "t%i- %i", type, times);
+    FILE *logfile;
+    char fileName[55];
+    sprintf(fileName, "logs/times%in%ip.log", numberOfNodes, processPerNode);
+    logfile = fopen(fileName, "a");
+    fprintf(logfile, "%s\n", buffer);
+    fclose(logfile);
+
+    exit(0);
 }
 
 void init_sighandler() {
@@ -47,7 +63,7 @@ void init_sighandler() {
 
     sigemptyset(&sigact.sa_mask);
     sigact.sa_flags = SA_RESTART;
-    sigact.sa_handler = cont_handler;
+    sigact.sa_handler = end_handler;
 
     sigaction(SIGUSR1, &sigact, NULL);
 }
@@ -175,10 +191,10 @@ int main (int argc, char* argv[]){
     sem_init(&sc, 0, 0);
 
     int id = atoi(argv[1]);
-    int type = atoi(argv[2]);
+    type = atoi(argv[2]);
     int firstq = atoi(argv[3]);
-    int numberOfNodes = atoi(argv[4]);
-    int processPerNode = atoi(argv[5]);
+    numberOfNodes = atoi(argv[4]);
+    processPerNode = atoi(argv[5]);
     int nodeId = atoi(argv[6]);
     int sems_key = atoi(argv[7]);
     int data_key = atoi(argv[8]);
@@ -192,6 +208,8 @@ int main (int argc, char* argv[]){
     for (int j=0; j < numberOfNodes;j++){
         vecinos[j] = firstq+j;
     }
+
+    init_sighandler();
     
     params.id = id;
     params.type = type;
@@ -244,6 +262,7 @@ int main (int argc, char* argv[]){
 
         // Esperamos por recibir todos los oks
         sem_wait(&sc);
+        times++;
         //sem_wait(&mutex);
         //dentro = 1;
         //sem_post(&mutex);
@@ -287,7 +306,16 @@ int main (int argc, char* argv[]){
 #endif
 
     free(pendientes);
-
+    
+    /*char buffer[55];
+    sprintf(buffer, "t%i- %i\n", type, times);
+    FILE *logfile;
+    char fileName[55];
+    sprintf(fileName, "logs/times%in%ip.log", numberOfNodes, processPerNode);
+    logfile = fopen(fileName, "a");
+    fprintf(logfile, "%s\n", buffer);
+    fclose(logfile);
+*/
 #ifdef SYNCTIME
     char buffer[55];
     sprintf(buffer, "%lu", waited);
