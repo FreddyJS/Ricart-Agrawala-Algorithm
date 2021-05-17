@@ -77,11 +77,13 @@ void *receptor( void *params){
         if (request.mtype == TICKETOK) {
             memcpy(&response, &request, sizeof(ticketok_t));
 
+            /* mximum priority
             if (response.org_node != -1) {
                 pendientes[n_pendientes].node = response.org_node;
                 pendientes[n_pendientes].process = response.org_process;  
                 n_pendientes++;          
             }
+            */
 
             accepted++;
             if (accepted == ((numNodo*processPerNode)-1 +extra_oks)) {
@@ -99,51 +101,51 @@ void *receptor( void *params){
         if (max_ticket < request.ticket) max_ticket = request.ticket;
 
         /* maximum priority */
-        if(!dentro) {
-            if (request.type > mi_tipo) {
-                response.mtype = TICKETOK;
-                response.dest = request.process;
-                response.org_process = -1;
-                response.org_node = -1;
+        /*
+        if (!dentro && request.type > mi_tipo) {
+            response.mtype = TICKETOK;
+            response.dest = request.process;
+            response.org_process = -1;
+            response.org_node = -1;
 
-                if(quiero) {
-                    response.org_node = nodeId; 
-                    response.org_process = id;
-                    extra_oks++;
-                }
-
-                msgsnd(vecinos[queue], &response, sizeof(int)*3, 0);
-
-            } else if (request.type < mi_tipo && quiero) {
-                pendientes[n_pendientes].node = request.node;
-                pendientes[n_pendientes].process = request.process;
-                n_pendientes++;
-
-            } else if (quiero && (
-                        (request.type == mi_tipo && mi_ticket<request.ticket) || 
-                        (request.type==mi_tipo && mi_ticket==request.ticket && nodeId<request.node) || 
-                        request.type==mi_tipo && mi_ticket==request.ticket && nodeId==request.node && id<request.process))
-            {
-                 pendientes[n_pendientes].node = request.node;
-                 pendientes[n_pendientes].process = request.process;
-                 n_pendientes++;
-
-            } else {
-                response.mtype = 2;
-                response.dest = request.process;
-                response.org_process = -1;
-                response.org_node = -1;
-
-                msgsnd(vecinos[queue], &response, sizeof(int)*3, 0);
+            if(quiero) {
+                response.org_node = nodeId; 
+                response.org_process = id;
+                extra_oks++;
             }
 
-        } else if (dentro) { 
-            pendientes[n_pendientes].node = request.node; 
-            pendientes[n_pendientes].process = request.process; 
-            n_pendientes++;
-        }
+            msgsnd(vecinos[queue], &response, sizeof(int)*3, 0);
 
-        /* Desempatando por ticket
+        } else if (dentro || (quiero && request.type < mi_tipo)) {
+            pendientes[n_pendientes].node = request.node;
+            pendientes[n_pendientes].process = request.process;
+            n_pendientes++;
+
+        } else if (dentro || (quiero && (
+                    (request.type == mi_tipo && mi_ticket<request.ticket) || 
+                    (request.type==mi_tipo && mi_ticket==request.ticket && nodeId<request.node) || 
+                    request.type==mi_tipo && mi_ticket==request.ticket && nodeId==request.node && id<request.process)))
+        {
+            pendientes[n_pendientes].node = request.node;
+            pendientes[n_pendientes].process = request.process;
+            n_pendientes++;
+
+        } else {
+            response.mtype = 2;
+            response.dest = request.process;
+            response.org_process = -1;
+            response.org_node = -1;
+
+            if (quiero && request.type > mi_tipo) {
+                response.org_process = id;
+                response.org_node = nodeId;
+            }
+
+            msgsnd(vecinos[queue], &response, sizeof(int)*3, 0);
+        }
+        */
+
+        /* Desempatando por ticket */
         if (!quiero || request.ticket < mi_ticket || 
             (request.ticket == mi_ticket && request.type > mi_tipo) || 
             (request.ticket == mi_ticket && request.type == mi_tipo && request.node < nodeId) || 
@@ -161,7 +163,6 @@ void *receptor( void *params){
             n_pendientes++;
             //printf("[Node %i - Process %i] \033[0;36mPendiente:\033[0m Ticket %i, Tipo %i, Node %i, Process %i (%i)\n", nodeId, id, request.ticket, request.type, request.node, request.process, n_pendientes);
         }
-        */
 
         sem_post(&mutex);
     }
@@ -272,11 +273,11 @@ int main (int argc, char* argv[]){
             int nodoDest = pendientes[i].node;
             msgok.mtype = TICKETOK;
             msgok.dest = pendientes[i].process;
-            msgok.org_node = -1;
-            msgok.org_process = -1;
+            //msgok.org_node = -1;
+            //msgok.org_process = -1;
             //printf("[Node %i - Process %i] \033[0;32mAceppted:\033[0m Node %i, Process %i\n", nodeId, id, pendientes[i].node, pendientes[i].process);
             
-            msgsnd(vecinos[nodoDest],&msgok, sizeof(int)*3,0); 
+            msgsnd(vecinos[nodoDest],&msgok, sizeof(int),0); 
         }
         n_pendientes=0;
 

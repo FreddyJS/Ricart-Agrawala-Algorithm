@@ -44,12 +44,20 @@ void end_handler(int signo) {
     end = 1;
 }
 
-void autoAcceptTicket(int dest, int queue) {
+void autoAcceptTicket(int dest, int queue, int firstq, int nodeId, int maxpos, int pos, ticket_t* tickets_mem, sem_t* sems_mem) {
     ticketok_t msg;
     msg.mtype = TICKETOK;
     msg.dest = dest;
-    msg.org_process = -1;
-    msg.org_node = -1;
+    //msg.org_process = -1;
+    //msg.org_node = -1;
+
+    if (queue == firstq + nodeId) {
+        sem_wait(&sems_mem[maxpos - pos]);  // wait for the child to be ready to read data
+        memcpy(&tickets_mem[pos], &msg, sizeof(ticketok_t)); // Copy the data so the child can read it
+        sem_post(&sems_mem[pos]);  // Post to the child
+
+        return;
+    }
             
     msgsnd(queue, &msg, sizeof(int)*3, 0); 
 }
@@ -135,7 +143,7 @@ int main (int argc, char* argv[]){
 
                 // Los lectores son automáticamente aceptados en lugar de preguntar a los demás lectores
                 if ((childs[i].type == EVENTOS || childs[i].type == GRADAS) && (request.type == EVENTOS || request.type == GRADAS)){
-                    autoAcceptTicket(request.process, firstq + request.node);
+                    autoAcceptTicket(request.process, firstq + request.node, firstq, nodeId, maxpos, i, tickets_mem, sems_mem);
                     continue;
                 } 
                                 
