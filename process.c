@@ -15,10 +15,12 @@ sem_t *sems_mem;
 ticket_t *tickets_mem;
 
 struct pendientes *pendientes;
-int mi_ticket;
-int max_ticket=0;
-int quiero=0;
 int n_pendientes=0;
+int max_ticket=0;
+int extra_oks;
+int mi_ticket;
+int quiero=0;
+int dentro=0;
 int end=0;
 
 struct pendientes
@@ -26,7 +28,6 @@ struct pendientes
     int node;
     int process;
 };
-
 
 struct params{
 	int *vecinos;
@@ -74,9 +75,18 @@ void *receptor( void *params){
         sem_post(&sems_mem[maxpos - pos]); 
         
         if (request.mtype == TICKETOK) {
+            memcpy(&response, &request, sizeof(ticketok_t));
+
+            if (response.org_node != -1) {
+                pendientes[n_pendientes].node = response.org_node;
+                pendientes[n_pendientes].process = response.org_process;  
+                n_pendientes++;          
+            }
+
             accepted++;
-            if (accepted == ((numNodo*processPerNode)-1)) {
+            if (accepted == ((numNodo*processPerNode)-1 +extra_oks)) {
                 accepted = 0;
+                extra_oks = 0;
                 sem_post(&sc);
             }
 
@@ -88,6 +98,52 @@ void *receptor( void *params){
 
         if (max_ticket < request.ticket) max_ticket = request.ticket;
 
+        /* maximum priority */
+        if(!dentro) {
+            if (request.type > mi_tipo) {
+                response.mtype = TICKETOK;
+                response.dest = request.process;
+                response.org_process = -1;
+                response.org_node = -1;
+
+                if(quiero) {
+                    response.org_node = nodeId; 
+                    response.org_process = id;
+                    extra_oks++;
+                }
+
+                msgsnd(vecinos[queue], &response, sizeof(int)*3, 0);
+
+            } else if (request.type < mi_tipo && quiero) {
+                pendientes[n_pendientes].node = request.node;
+                pendientes[n_pendientes].process = request.process;
+                n_pendientes++;
+
+            } else if (quiero && (
+                        (request.type == mi_tipo && mi_ticket<request.ticket) || 
+                        (request.type==mi_tipo && mi_ticket==request.ticket && nodeId<request.node) || 
+                        request.type==mi_tipo && mi_ticket==request.ticket && nodeId==request.node && id<request.process))
+            {
+                 pendientes[n_pendientes].node = request.node;
+                 pendientes[n_pendientes].process = request.process;
+                 n_pendientes++;
+
+            } else {
+                response.mtype = 2;
+                response.dest = request.process;
+                response.org_process = -1;
+                response.org_node = -1;
+
+                msgsnd(vecinos[queue], &response, sizeof(int)*3, 0);
+            }
+
+        } else if (dentro) { 
+            pendientes[n_pendientes].node = request.node; 
+            pendientes[n_pendientes].process = request.process; 
+            n_pendientes++;
+        }
+
+        /* Desempatando por ticket
         if (!quiero || request.ticket < mi_ticket || 
             (request.ticket == mi_ticket && request.type > mi_tipo) || 
             (request.ticket == mi_ticket && request.type == mi_tipo && request.node < nodeId) || 
@@ -100,11 +156,12 @@ void *receptor( void *params){
 
            msgsnd(vecinos[queue], &response, sizeof(int), 0);
         } else {
-            pendientes[n_pendientes].node = request.node;
+            pendientes[n_pendientes].node = request.node; 
             pendientes[n_pendientes].process = request.process;
             n_pendientes++;
             //printf("[Node %i - Process %i] \033[0;36mPendiente:\033[0m Ticket %i, Tipo %i, Node %i, Process %i (%i)\n", nodeId, id, request.ticket, request.type, request.node, request.process, n_pendientes);
         }
+        */
 
         sem_post(&mutex);
     }
@@ -129,7 +186,7 @@ int main (int argc, char* argv[]){
     tickets_mem = shmat(data_key, NULL, 0);
 
     int vecinos[numberOfNodes];
-    pendientes = malloc (((numberOfNodes*processPerNode)-1) * sizeof(struct pendientes)); 
+    pendientes = malloc (((numberOfNodes*processPerNode)-1) * sizeof(struct pendientes) * 2); 
 
     for (int j=0; j < numberOfNodes;j++){
         vecinos[j] = firstq+j;
@@ -148,8 +205,20 @@ int main (int argc, char* argv[]){
         exit(0);
     }
 
+
+#ifdef SYNCTIME
+    while (1)
+    {
+        if (nodeId == numberOfNodes-1 && id == processPerNode-1) break;
+    }
+#endif
+
+    unsigned long waited;
+
+#ifndef SYNCTIME
     while (!end)
-    {   
+    {  
+#endif 
         sem_wait(&mutex);
         quiero=1;
         mi_ticket=max_ticket+1;
@@ -174,8 +243,13 @@ int main (int argc, char* argv[]){
 
         // Esperamos por recibir todos los oks
         sem_wait(&sc);
+        sem_wait(&mutex);
+        dentro = 1;
+        sem_post(&mutex);
+
         gettimeofday(&stop_time, NULL);
-        printf("\n[Node %i - Process %i] \033[0;34mWaited %lu ms\033[0m\n", nodeId, id, (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000); 
+        waited = (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000;
+        printf("\n[Node %i - Process %i] \033[0;34mWaited %lu ms\033[0m\n", nodeId, id, waited); 
 
         //SECCION CRITICA
         printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
@@ -183,27 +257,47 @@ int main (int argc, char* argv[]){
         sleep(SCTIME);
 
         // Fuera de la sección crítica
+        printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
+        
         sem_wait(&mutex);
+        dentro=0;
         quiero=0;
         sem_post(&mutex);
-        printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
 
         ticketok_t msgok;
         printf("[Node %i - Process %i] \033[0;32mPendientes:\033[0m %i\n", nodeId, id, n_pendientes);
+
         for (int i = 0; i < n_pendientes; i++)
         {
             int nodoDest = pendientes[i].node;
             msgok.mtype = TICKETOK;
             msgok.dest = pendientes[i].process;
+            msgok.org_node = -1;
+            msgok.org_process = -1;
             //printf("[Node %i - Process %i] \033[0;32mAceppted:\033[0m Node %i, Process %i\n", nodeId, id, pendientes[i].node, pendientes[i].process);
-
             
-            msgsnd(vecinos[nodoDest],&msgok, sizeof(int),0); 
+            msgsnd(vecinos[nodoDest],&msgok, sizeof(int)*3,0); 
         }
         n_pendientes=0;
+
+#ifndef SYNCTIME
     }
+#endif
 
     free(pendientes);
+
+#ifdef SYNCTIME
+    char buffer[55];
+    sprintf(buffer, "%lu", waited);
+
+    FILE *logfile;
+    char fileName[55];
+    sprintf(fileName, "logs/waited%in%ip.log", numberOfNodes, processPerNode);
+    logfile = fopen(fileName, "a");
+    fprintf(logfile, "%s\n", buffer);
+    fclose(logfile);
+    // justo al acabar 0 delay
+#endif
     
     return 0;
 }

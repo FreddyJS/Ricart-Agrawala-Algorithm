@@ -48,8 +48,10 @@ void autoAcceptTicket(int dest, int queue) {
     ticketok_t msg;
     msg.mtype = TICKETOK;
     msg.dest = dest;
+    msg.org_process = -1;
+    msg.org_node = -1;
             
-    msgsnd(queue, &msg, sizeof(int), 0); 
+    msgsnd(queue, &msg, sizeof(int)*3, 0); 
 }
 
 int main (int argc, char* argv[]){
@@ -79,7 +81,7 @@ int main (int argc, char* argv[]){
     child_t childs[processPerNode];
 
     for (int i=0; i<processPerNode; i++){
-        int type = ADMIN;
+        int type = EVENTOS;
         if (i > processPerNode/4) type = GRADAS;
         if (i > 2*processPerNode/4) type = PRERESERVAS;
         if (i > 3*processPerNode/4) type = ADMIN;

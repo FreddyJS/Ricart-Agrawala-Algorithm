@@ -13,6 +13,7 @@
 
 int numberOfNodes;
 int processPerNode;
+int end = 0;
 
 void deleteq (int *queues){
 
@@ -39,6 +40,21 @@ void nodo (int nodeId, int firstq, int numberOfNodes){
 
     exit(0);
 }
+
+void end_handler(int signo) {
+    end = 1;
+}
+
+void init_sighandler() {
+    struct sigaction sigact;
+
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = SA_RESTART;
+    sigact.sa_handler = end_handler;
+
+    sigaction(SIGUSR1, &sigact, NULL);
+}
+
 
 int main (int argc, char* argv[]) {
     struct timeval stop_time, start_time;
@@ -78,7 +94,10 @@ int main (int argc, char* argv[]) {
     }
 
     char option = 'n';
-    while (option != 'q')
+
+    init_sighandler();
+    
+    while (option != 'q' && !end)
     {
         scanf("%c", &option);
     }
