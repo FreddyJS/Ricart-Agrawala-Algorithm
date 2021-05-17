@@ -220,9 +220,8 @@ int main (int argc, char* argv[]){
     while (!end)
     {  
 #endif 
-        if (type == PAGOS)
+        if (type == ANULACIONES)
             sleep(10);
-            
         sem_wait(&mutex);
         quiero=1;
         mi_ticket=max_ticket+1;
@@ -254,17 +253,17 @@ int main (int argc, char* argv[]){
         gettimeofday(&stop_time, NULL);
         waited = (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000;
 
-        if (type == PAGOS)
+        if (type == ANULACIONES)
             printf("\n[Node %i - Process %i] \033[0;34mWaited %lu ms\033[0m\n", nodeId, id, waited); 
 
         //SECCION CRITICA
-        if (type == PAGOS)
+        if (type == ANULACIONES)
             printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
 
         sleep(SCTIME);
 
         // Fuera de la sección crítica
-        if (type == PAGOS)
+        if (type == ANULACIONES)
             printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
         
         sem_wait(&mutex);
@@ -273,7 +272,7 @@ int main (int argc, char* argv[]){
         sem_post(&mutex);
 
         ticketok_t msgok;
-        if (type == PAGOS)
+        if (type == ANULACIONES)
             printf("[Node %i - Process %i] \033[0;32mPendientes:\033[0m %i\n", nodeId, id, n_pendientes);
 
         for (int i = 0; i < n_pendientes; i++)
@@ -289,7 +288,7 @@ int main (int argc, char* argv[]){
         }
         n_pendientes=0;
 
-        if (type == PAGOS) break;
+        if (type == ANULACIONES) break;
 #ifndef SYNCTIME
     }
 #endif
@@ -305,8 +304,6 @@ int main (int argc, char* argv[]){
     logfile = fopen(fileName, "a");
     fprintf(logfile, "%s\n", buffer);
     fclose(logfile);
-
-
 
 #ifdef SYNCTIME
     // justo al acabar 0 delay
