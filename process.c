@@ -187,7 +187,7 @@ int main (int argc, char* argv[]){
     tickets_mem = shmat(data_key, NULL, 0);
 
     int vecinos[numberOfNodes];
-    pendientes = malloc (((numberOfNodes*processPerNode)-1) * sizeof(struct pendientes) * 2); 
+    pendientes = malloc (((numberOfNodes*processPerNode)-1) * sizeof(struct pendientes)); 
 
     for (int j=0; j < numberOfNodes;j++){
         vecinos[j] = firstq+j;
@@ -250,6 +250,7 @@ int main (int argc, char* argv[]){
 
         gettimeofday(&stop_time, NULL);
         waited = (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000;
+
         printf("\n[Node %i - Process %i] \033[0;34mWaited %lu ms\033[0m\n", nodeId, id, waited); 
 
         //SECCION CRITICA

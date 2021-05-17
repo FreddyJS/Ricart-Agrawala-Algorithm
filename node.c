@@ -51,15 +51,15 @@ void autoAcceptTicket(int dest, int queue, int firstq, int nodeId, int maxpos, i
     //msg.org_process = -1;
     //msg.org_node = -1;
 
-    if (queue == firstq + nodeId) {
+    /*if (queue == firstq + nodeId) {
         sem_wait(&sems_mem[maxpos - pos]);  // wait for the child to be ready to read data
         memcpy(&tickets_mem[pos], &msg, sizeof(ticketok_t)); // Copy the data so the child can read it
         sem_post(&sems_mem[pos]);  // Post to the child
 
         return;
-    }
+    }*/
             
-    msgsnd(queue, &msg, sizeof(int)*3, 0); 
+    msgsnd(queue, &msg, sizeof(int), 0); 
 }
 
 int main (int argc, char* argv[]){
