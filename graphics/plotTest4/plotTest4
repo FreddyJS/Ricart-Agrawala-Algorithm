@@ -9,10 +9,12 @@ set title 'Veces sincronizado en 1 min (1 Nodos)'
 
 #set yrange [0:70]
 set term png
+set yrange [0:30]	
 set output 'sincronizaciones1n.png'
 plot 'data1/times1n1t.plot' title "EVENTOS" with lines, "data1/times1n2t.plot" title "GRADAS" with lines, "data1/times1n3t.plot" title "PRERES" with lines, "data1/times1n4t.plot" title "ADMIN" with lines, \
 	"data1/times1n5t.plot" title "PAGOS" with lines, "data1/times1n6t.plot" title "ANULACIONES" with lines
 
+set yrange [0:50]	
 set title 'Veces sincronizado en 1 min (2 Nodos)'
 set output 'sincronizaciones2n.png'
 plot 'data2/times2n1t.plot' title "EVENTOS" with lines, "data2/times2n2t.plot" title "GRADAS" with lines, "data2/times2n3t.plot" title "PRERES" with lines, "data2/times2n4t.plot" title "ADMIN" with lines, \
