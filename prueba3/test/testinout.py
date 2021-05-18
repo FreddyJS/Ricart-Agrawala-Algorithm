@@ -12,11 +12,6 @@ os.system(bash)
 bash = "mkdir logs"
 os.system(bash)
 
-nodes = 0
-process = 0
-
-wait_time = 0.1 # 100ms
-
 def check_file(filename, nlines):
     try:
         log = open("%s" % (filename))
@@ -49,7 +44,8 @@ def test_code(nodes, process, wait_time, filename, lines):
 
     return False
 
-# main
+nodes = 0
+
 while (nodes != 10):
     nodes = nodes+1
 

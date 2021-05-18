@@ -13,8 +13,7 @@ bash = "mkdir logs"
 os.system(bash)
 
 nodes = 0
-
-wait_time = 0.1 # 100ms
+wait_time = 60 
 
 while (nodes != 5):
     nodes = nodes+1
@@ -29,7 +28,6 @@ while (nodes != 5):
             
         running = subprocess.Popen(shlex.split(test), shell=False, stdin=PIPE)
             
-        wait_time = 60 
 
         print("\nWaiting %f secs... Process %i" % (wait_time, running.pid))
         time.sleep(wait_time)

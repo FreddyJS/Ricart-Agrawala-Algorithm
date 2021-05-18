@@ -3,12 +3,6 @@ import shlex
 import subprocess, signal
 from subprocess import PIPE, run
 
-all = 0
-
-for arg in sys.argv:
-    if (arg == '-all'):
-        all = 1
-
 bash = "make synctime"
 os.system(bash)
 
@@ -17,11 +11,6 @@ os.system(bash)
 
 bash = "mkdir logs"
 os.system(bash)
-
-nodes = 0
-process = 0
-
-wait_time = 0.1 # 100ms
 
 def check_file(filename, nlines):
     try:
@@ -54,6 +43,8 @@ def test_code(nodes, process, wait_time, filename, lines):
         return True
 
     return False
+
+nodes = 0
 
 while (nodes != 5):
     nodes = nodes+1

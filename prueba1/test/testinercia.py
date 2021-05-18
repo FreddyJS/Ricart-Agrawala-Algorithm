@@ -12,11 +12,6 @@ bash = "rm -r logs"
 bash = "mkdir logs"
 #os.system(bash)
 
-nodes = 2
-process = 0
-
-wait_time = 0.1 # 100ms
-
 def check_file(filename, nlines):
     try:
         log = open("%s" % (filename))
@@ -49,6 +44,10 @@ def test_code(nodes, process, wait_time, filename, lines):
 
     return False
 
+
+nodes = 0
+wait_time = 60 
+
 while (nodes != 5):
     nodes = nodes+1
 
@@ -57,7 +56,6 @@ while (nodes != 5):
         process = process+5
         
         passed = False
-        wait_time = 60 
         filename = "logs/inercia%in%ip.log" % (nodes, process)
 
         while(not passed):
