@@ -5,7 +5,7 @@
 #include <sys/msg.h>
 #include <sys/types.h>
 
-#define SCTIME 10
+#define SCTIME 1
 
 #define TICKET 1
 #define TICKETOK 2

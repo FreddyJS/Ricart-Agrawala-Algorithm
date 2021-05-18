@@ -3,21 +3,21 @@ import shlex
 import subprocess, signal
 from subprocess import PIPE, run
 
-bash = "make synctime"
+bash = "make"
 os.system(bash)
 
 bash = "rm -r logs"
-os.system(bash)
+#os.system(bash)
 
 bash = "mkdir logs"
-os.system(bash)
+#os.system(bash)
 
 nodes = 0
 process = 5
 
-wait_time = 0.1 # 100ms
+wait_time = 60 
 
-while (nodes != 10):
+while (nodes != 5):
     nodes = nodes+1
     process = 5
     
@@ -30,8 +30,6 @@ while (nodes != 10):
         print("\nTesting Sync Time... Nodes: %i, Process: %i" % (nodes,process))
             
         running = subprocess.Popen(shlex.split(test), shell=False, stdin=PIPE)
-            
-        wait_time = nodes*process*0.03 
 
         print("\nWaiting %f secs... Process %i" % (wait_time, running.pid))
         time.sleep(wait_time)

@@ -45,9 +45,9 @@ struct params{
     int type;
 }params;
 
-void cont_handler() {
-    end = 1;
-
+void end_handler() {
+  end = 1;
+    
     char buffer[55];
     sprintf(buffer, "%i", times);
     FILE *logfile;
@@ -56,9 +56,7 @@ void cont_handler() {
     logfile = fopen(fileName, "a");
     fprintf(logfile, "%s\n", buffer);
     fclose(logfile);
-
     exit(0);
-
 
 }
 
@@ -67,7 +65,7 @@ void init_sighandler() {
 
     sigemptyset(&sigact.sa_mask);
     sigact.sa_flags = SA_RESTART;
-    sigact.sa_handler = cont_handler;
+    sigact.sa_handler = end_handler;
 
     sigaction(SIGUSR1, &sigact, NULL);
 }
@@ -201,6 +199,8 @@ int main (int argc, char* argv[]){
         vecinos[j] = firstq+j;
     }
     
+    init_sighandler();
+
     params.id = id;
     params.type = type;
     params.vecinos = vecinos;
