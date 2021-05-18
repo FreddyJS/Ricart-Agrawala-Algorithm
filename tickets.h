@@ -28,8 +28,6 @@ typedef struct ticket {
 typedef struct ticketok {
     long mtype; // Type 2 = OK
     int dest;
-    //int org_node;
-    //int org_process;
 } ticketok_t;
 
 #endif

@@ -77,14 +77,6 @@ void *receptor( void *params){
         if (request.mtype == TICKETOK) {
             memcpy(&response, &request, sizeof(ticketok_t));
 
-            /* mximum priority
-            if (response.org_node != -1) {
-                pendientes[n_pendientes].node = response.org_node;
-                pendientes[n_pendientes].process = response.org_process;  
-                n_pendientes++;          
-            }
-            */
-
             accepted++;
             if (accepted == ((numNodo*processPerNode)-1 +extra_oks)) {
                 accepted = 0;
@@ -99,51 +91,6 @@ void *receptor( void *params){
         sem_wait(&mutex);
 
         if (max_ticket < request.ticket) max_ticket = request.ticket;
-
-        /* maximum priority */
-        /*
-        if (!dentro && request.type > mi_tipo) {
-            response.mtype = TICKETOK;
-            response.dest = request.process;
-            response.org_process = -1;
-            response.org_node = -1;
-
-            if(quiero) {
-                response.org_node = nodeId; 
-                response.org_process = id;
-                extra_oks++;
-            }
-
-            msgsnd(vecinos[queue], &response, sizeof(int)*3, 0);
-
-        } else if (dentro || (quiero && request.type < mi_tipo)) {
-            pendientes[n_pendientes].node = request.node;
-            pendientes[n_pendientes].process = request.process;
-            n_pendientes++;
-
-        } else if (dentro || (quiero && (
-                    (request.type == mi_tipo && mi_ticket<request.ticket) || 
-                    (request.type==mi_tipo && mi_ticket==request.ticket && nodeId<request.node) || 
-                    request.type==mi_tipo && mi_ticket==request.ticket && nodeId==request.node && id<request.process)))
-        {
-            pendientes[n_pendientes].node = request.node;
-            pendientes[n_pendientes].process = request.process;
-            n_pendientes++;
-
-        } else {
-            response.mtype = 2;
-            response.dest = request.process;
-            response.org_process = -1;
-            response.org_node = -1;
-
-            if (quiero && request.type > mi_tipo) {
-                response.org_process = id;
-                response.org_node = nodeId;
-            }
-
-            msgsnd(vecinos[queue], &response, sizeof(int)*3, 0);
-        }
-        */
 
         /* Desempatando por ticket */
         if (!quiero || request.ticket < mi_ticket || 
@@ -206,20 +153,10 @@ int main (int argc, char* argv[]){
         exit(0);
     }
 
-
-#ifdef SYNCTIME
-    while (1)
-    {
-        if (nodeId == numberOfNodes-1 && id == processPerNode-1) break;
-    }
-#endif
-
     unsigned long waited;
 
-#ifndef SYNCTIME
     while (!end)
     {  
-#endif 
         sem_wait(&mutex);
         quiero=1;
         mi_ticket=max_ticket+1;
@@ -244,9 +181,6 @@ int main (int argc, char* argv[]){
 
         // Esperamos por recibir todos los oks
         sem_wait(&sc);
-        //sem_wait(&mutex);
-        //dentro = 1;
-        //sem_post(&mutex);
 
         gettimeofday(&stop_time, NULL);
         waited = (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000;
@@ -262,7 +196,6 @@ int main (int argc, char* argv[]){
         printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
         
         sem_wait(&mutex);
-        //dentro=0;
         quiero=0;
         sem_post(&mutex);
 
@@ -274,32 +207,16 @@ int main (int argc, char* argv[]){
             int nodoDest = pendientes[i].node;
             msgok.mtype = TICKETOK;
             msgok.dest = pendientes[i].process;
-            //msgok.org_node = -1;
-            //msgok.org_process = -1;
+
             //printf("[Node %i - Process %i] \033[0;32mAceppted:\033[0m Node %i, Process %i\n", nodeId, id, pendientes[i].node, pendientes[i].process);
             
             msgsnd(vecinos[nodoDest],&msgok, sizeof(int),0); 
         }
         n_pendientes=0;
 
-#ifndef SYNCTIME
     }
-#endif
 
     free(pendientes);
-
-#ifdef SYNCTIME
-    char buffer[55];
-    sprintf(buffer, "%lu", waited);
-
-    FILE *logfile;
-    char fileName[55];
-    sprintf(fileName, "logs/waited%in%ip.log", numberOfNodes, processPerNode);
-    logfile = fopen(fileName, "a");
-    fprintf(logfile, "%s\n", buffer);
-    fclose(logfile);
-    // justo al acabar 0 delay
-#endif
     
     return 0;
 }

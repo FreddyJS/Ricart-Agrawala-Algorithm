@@ -48,8 +48,6 @@ void autoAcceptTicket(int dest, int queue, int firstq, int nodeId, int maxpos, i
     ticketok_t msg;
     msg.mtype = TICKETOK;
     msg.dest = dest;
-    //msg.org_process = -1;
-    //msg.org_node = -1;
 
     /*if (queue == firstq + nodeId) {
         sem_wait(&sems_mem[maxpos - pos]);  // wait for the child to be ready to read data
@@ -146,7 +144,7 @@ int main (int argc, char* argv[]){
                     autoAcceptTicket(request.process, firstq + request.node, firstq, nodeId, maxpos, i, tickets_mem, sems_mem);
                     continue;
                 } 
-                                
+     
                 sem_wait(&sems_mem[maxpos - i]);
                 memcpy(&tickets_mem[i], &request, sizeof(ticket_t)); // Copy the data so the child can read it
                 sem_post(&sems_mem[i]);
