@@ -1,35 +1,35 @@
 #!/usr/bin/gnuplot
 #set logscale x 10
-set xlabel 'proccessPerNode’
-set ylabel 'timesSynced'
+set xlabel 'procesos por nodo’
+set ylabel 'sincronizaciones'
 
 # Fijar posición de la leyenda de funciones
 set key top left
-set title 'Times Synced (1 Nodes)'
+set title 'Veces sincronizado en 1 min (1 Nodos)'
 
 #set yrange [0:70]
 set term png
-set output 'timesSynced1n.png'
-plot 'times1n1t.plot' title "EVENTOS" with lines, "times1n2t.plot" title "GRADAS" with lines, "times1n3t.plot" title "PRERES" with lines, "times1n4t.plot" title "ADMIN" with lines, \
-	"times1n5t.plot" title "PAGOS" with lines, "times1n6t.plot" title "ANULACIONES" with lines
+set output 'sincronizaciones1n.png'
+plot 'data1/times1n1t.plot' title "EVENTOS" with lines, "data1/times1n2t.plot" title "GRADAS" with lines, "data1/times1n3t.plot" title "PRERES" with lines, "data1/times1n4t.plot" title "ADMIN" with lines, \
+	"data1/times1n5t.plot" title "PAGOS" with lines, "data1/times1n6t.plot" title "ANULACIONES" with lines
 
-set title 'Times Synced (2 Nodes)'
-set output 'timesSynced2n.png'
-plot 'times2n1t.plot' title "EVENTOS" with lines, "times2n2t.plot" title "GRADAS" with lines, "times2n3t.plot" title "PRERES" with lines, "times2n4t.plot" title "ADMIN" with lines, \
-	"times2n5t.plot" title "PAGOS" with lines, "times2n6t.plot" title "ANULACIONES" with lines
+set title 'Veces sincronizado en 1 min (2 Nodos)'
+set output 'sincronizaciones2n.png'
+plot 'data2/times2n1t.plot' title "EVENTOS" with lines, "data2/times2n2t.plot" title "GRADAS" with lines, "data2/times2n3t.plot" title "PRERES" with lines, "data2/times2n4t.plot" title "ADMIN" with lines, \
+	"data2/times2n5t.plot" title "PAGOS" with lines, "data2/times2n6t.plot" title "ANULACIONES" with lines
 
-set title 'Times Synced (3 Nodes)'
-set output 'timesSynced3n.png'
-plot 'times3n1t.plot' title "EVENTOS" with lines, "times3n2t.plot" title "GRADAS" with lines, "times3n3t.plot" title "PRERES" with lines, "times3n4t.plot" title "ADMIN" with lines, \
-	"times3n5t.plot" title "PAGOS" with lines, "times3n6t.plot" title "ANULACIONES" with lines
+set title 'Veces sincronizado en 1 min (3 Nodos)'
+set output 'sincronizaciones3n.png'
+plot 'data3/times3n1t.plot' title "EVENTOS" with lines, "data3/times3n2t.plot" title "GRADAS" with lines, "data3/times3n3t.plot" title "PRERES" with lines, "data3/times3n4t.plot" title "ADMIN" with lines, \
+	"data3/times3n5t.plot" title "PAGOS" with lines, "data3/times3n6t.plot" title "ANULACIONES" with lines
 	
 set yrange [0:65]	
-set title 'Times Synced (4 Nodes)'
-set output 'timesSynced4n.png'
-plot 'times4n1t.plot' title "EVENTOS" with lines, "times4n2t.plot" title "GRADAS" with lines, "times4n3t.plot" title "PRERES" with lines, "times4n4t.plot" title "ADMIN" with lines, \
-	"times4n5t.plot" title "PAGOS" with lines, "times4n6t.plot" title "ANULACIONES" with lines
+set title 'Veces sincronizado en 1 min (4 Nodos)'
+set output 'sincronizaciones4n.png'
+plot 'data4/times4n1t.plot' title "EVENTOS" with lines, "data4/times4n2t.plot" title "GRADAS" with lines, "data4/times4n3t.plot" title "PRERES" with lines, "data4/times4n4t.plot" title "ADMIN" with lines, \
+	"data4/times4n5t.plot" title "PAGOS" with lines, "data4/times4n6t.plot" title "ANULACIONES" with lines
 
-set title 'Times Synced (5 Nodes)'
-set output 'timesSynced5n.png'
-plot 'times5n1t.plot' title "EVENTOS" with lines, "times5n2t.plot" title "GRADAS" with lines, "times5n3t.plot" title "PRERES" with lines, "times5n4t.plot" title "ADMIN" with lines, \
-	"times5n5t.plot" title "PAGOS" with lines, "times5n6t.plot" title "ANULACIONES" with lines
+set title 'Veces sincronizado en 1 min (5 Nodos)'
+set output 'sincronizaciones5n.png'
+plot 'data5/times5n1t.plot' title "EVENTOS" with lines, "data5/times5n2t.plot" title "GRADAS" with lines, "data5/times5n3t.plot" title "PRERES" with lines, "data5/times5n4t.plot" title "ADMIN" with lines, \
+	"data5/times5n5t.plot" title "PAGOS" with lines, "data5/times5n6t.plot" title "ANULACIONES" with lines
