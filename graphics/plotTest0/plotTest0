@@ -4,10 +4,10 @@ set xlabel 'proccessPerNode’
 set ylabel 'time(ms)'
 
 # Fijar posición de la leyenda de funciones
-set key bottom right
+set key top left
 set title 'First Entry Time'
 
 #set xrange [0.5:150]
-set term postscript color
-set output 'timeFirstEntry.ps'
+set term png
+set output 'timeFirstEntry.png'
 plot 'salida1n.plot' title "1 Node" with lines, "salida2n.plot" title "2 Nodes" with lines, "salida3n.plot" title "3 Nodes" with lines, "salida4n.plot" title "4 Nodes" with lines, "salida5n.plot" title "5 Nodes" with lines

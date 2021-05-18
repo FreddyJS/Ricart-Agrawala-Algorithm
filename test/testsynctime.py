@@ -18,7 +18,7 @@ os.system(bash)
 bash = "mkdir logs"
 os.system(bash)
 
-nodes = 0
+nodes = 4
 process = 0
 
 wait_time = 0.1 # 100ms
@@ -58,20 +58,22 @@ def test_code(nodes, process, wait_time, filename, lines):
 while (nodes != 5):
     nodes = nodes+1
 
-    process = 0
+    process = 75
+    wait_time = 1 
     while(process != 100):
         process = process+5
         
-        passed = False
-        wait_time = 1 
         filename = "logs/waited%in%ip.log" % (nodes, process)
 
         tries = 0
-        for x in range(10):
+
+        while(tries != 10):
+            passed = False
             tries = tries+1
             while(not passed):
                 passed = test_code(nodes, process, wait_time, filename, tries)
-                wait_time = wait_time+1
+                if (not passed):
+                    wait_time = wait_time+1
 
         log = open(filename)
         lines = log.readlines()

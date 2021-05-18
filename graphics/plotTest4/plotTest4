@@ -4,32 +4,32 @@ set xlabel 'proccessPerNode’
 set ylabel 'timesSynced'
 
 # Fijar posición de la leyenda de funciones
-set key bottom right
-set title 'Times Synced in 1min (1 Node)'
+set key top left
+set title 'Times Synced (1 Nodes)'
 
-#set xrange [0.5:150]
-set term postscript color
-set output 'timesSynced1n.ps'
-plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
-	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines
+#set yrange [0:70]
+set term png
+set output 'timesSynced1n.png'
+plot 'times1n1t.plot' title "EVENTOS" with lines, "times1n2t.plot" title "GRADAS" with lines, "times1n3t.plot" title "PRERES" with lines, "times1n4t.plot" title "ADMIN" with lines, \
+	"times1n5t.plot" title "PAGOS" with lines, "times1n6t.plot" title "ANULACIONES" with lines
+
+set title 'Times Synced (2 Nodes)'
+set output 'timesSynced2n.png'
+plot 'times2n1t.plot' title "EVENTOS" with lines, "times2n2t.plot" title "GRADAS" with lines, "times2n3t.plot" title "PRERES" with lines, "times2n4t.plot" title "ADMIN" with lines, \
+	"times2n5t.plot" title "PAGOS" with lines, "times2n6t.plot" title "ANULACIONES" with lines
+
+set title 'Times Synced (3 Nodes)'
+set output 'timesSynced3n.png'
+plot 'times3n1t.plot' title "EVENTOS" with lines, "times3n2t.plot" title "GRADAS" with lines, "times3n3t.plot" title "PRERES" with lines, "times3n4t.plot" title "ADMIN" with lines, \
+	"times3n5t.plot" title "PAGOS" with lines, "times3n6t.plot" title "ANULACIONES" with lines
 	
-	
-set title 'Times Synced in 1min (2 Node)'
-set output 'timesSynced2n.ps'
-plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
-	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines
-	
-set title 'Times Synced in 1min (3 Node)'
-set output 'timesSynced3n.ps'
-plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
-	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines
-	
-set title 'Times Synced in 1min (4 Node)'
-set output 'timesSynced4n.ps'
-plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
-	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines
-	
-set title 'Times Synced in 1min (5 Node)'
-set output 'timesSynced5n.ps'
-plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
-	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines
+set yrange [0:65]	
+set title 'Times Synced (4 Nodes)'
+set output 'timesSynced4n.png'
+plot 'times4n1t.plot' title "EVENTOS" with lines, "times4n2t.plot" title "GRADAS" with lines, "times4n3t.plot" title "PRERES" with lines, "times4n4t.plot" title "ADMIN" with lines, \
+	"times4n5t.plot" title "PAGOS" with lines, "times4n6t.plot" title "ANULACIONES" with lines
+
+set title 'Times Synced (5 Nodes)'
+set output 'timesSynced5n.png'
+plot 'times5n1t.plot' title "EVENTOS" with lines, "times5n2t.plot" title "GRADAS" with lines, "times5n3t.plot" title "PRERES" with lines, "times5n4t.plot" title "ADMIN" with lines, \
+	"times5n5t.plot" title "PAGOS" with lines, "times5n6t.plot" title "ANULACIONES" with lines

@@ -3,7 +3,7 @@ import shlex
 import subprocess, signal
 from subprocess import PIPE, run
 
-bash = "make synctime"
+bash = "make"
 os.system(bash)
 
 bash = "rm -r logs"
@@ -13,11 +13,10 @@ bash = "mkdir logs"
 os.system(bash)
 
 nodes = 0
-process = 0
 
 wait_time = 0.1 # 100ms
 
-while (nodes != 10):
+while (nodes != 5):
     nodes = nodes+1
 
     process = 0
@@ -26,38 +25,44 @@ while (nodes != 10):
 
         test = "./init %i %i" % (nodes, process) # ejecuta 1nodo 5 procesos
         
-        for i in range (10):
-            print("\nTesting Sync Time... Nodes: %i, Process: %i" % (nodes,process))
+        print("\nTesting Sync Time... Nodes: %i, Process: %i" % (nodes,process))
             
-            running = subprocess.Popen(shlex.split(test), shell=False, stdin=PIPE)
+        running = subprocess.Popen(shlex.split(test), shell=False, stdin=PIPE)
             
-            wait_time = nodes*process*0.03 
+        wait_time = 60 
 
-            print("\nWaiting %f secs... Process %i" % (wait_time, running.pid))
-            time.sleep(wait_time)
+        print("\nWaiting %f secs... Process %i" % (wait_time, running.pid))
+        time.sleep(wait_time)
 
-            running.communicate(input=b'q') #introduce q a stdin del proceso
+        running.communicate(input=b'q') #introduce q a stdin del proceso
             
-            time.sleep(0.5)
+        time.sleep(0.5)
 
         type = 0
-        while(type != 7):
+        while(type != 6):
             type = type+1
             
-            log = open("logs/times%in%ip%it.log" % (nodes, process, type))
-            lines = log.readlines()
+            try:
+                log = open("logs/times%in%ip%it.log" % (nodes, process, type))
+                lines = log.readlines()
 
-            sum = 0
-            n = 0
-            for line in lines:
-                n = n+1
-                sum = sum + int(line)
-            log.close()
+                sum = 0
+                n = 0
+                for line in lines:
+                    n = n+1
+                    sum = sum + int(line)
+                log.close()
 
-            log = open("plots/times%in%it.log" % (nodes, type), 'a')
-            log.write("%i" % (process) + str(sum/n) + '\n')
-            log.close()
+                log = open("plots/times%in%it.plot" % (nodes, type), 'a')
+                log.write("%i" % (process) + " " + str(sum) + '\n')
+                log.close()
 
+            except IOError:
+                log = open("plots/times%in%it.plot" % (nodes, type), 'a')
+                log.write("%i" % (process) + " " + str(0) + '\n')
+                log.close()
+
+            
         print("\nTest Results. Nodes: %i, Process: %i, AvgSyncTime: %fms" % (nodes, process, sum/n))
 
 print("Test Finished!")

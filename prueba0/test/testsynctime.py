@@ -3,7 +3,13 @@ import shlex
 import subprocess, signal
 from subprocess import PIPE, run
 
-bash = "make"
+all = 0
+
+for arg in sys.argv:
+    if (arg == '-all'):
+        all = 1
+
+bash = "make synctime"
 os.system(bash)
 
 bash = "rm -r logs"
@@ -27,7 +33,7 @@ def check_file(filename, nlines):
 
         log.close()
     except IOError:
-        print("Test Failed! The file not exists!")
+        print("Test Failed! The file %s not exists!" % (filename))
         return False
 
     print("Test Failed! The file not have the requested lines!")
@@ -36,7 +42,7 @@ def check_file(filename, nlines):
 def test_code(nodes, process, wait_time, filename, lines):
     test = "./init %i %i" % (nodes, process) # ejecuta 1nodo 5 procesos
 
-    print("Testing InOut Time... Nodes: %i, Process: %i" % (nodes,process))            
+    print("Testing Inercia Time... Nodes: %i, Process: %i" % (nodes,process))            
     running = subprocess.Popen(shlex.split(test), shell=False, stdin=PIPE)
             
     print("Waiting %f secs... Process %i" % (wait_time, running.pid))
@@ -49,22 +55,40 @@ def test_code(nodes, process, wait_time, filename, lines):
 
     return False
 
-# main
-while (nodes != 10):
+while (nodes != 5):
     nodes = nodes+1
 
     process = 0
+    wait_time = 1 
     while(process != 100):
         process = process+5
+        
+        filename = "logs/waited%in%ip.log" % (nodes, process)
 
-        passed = False
-        filename = "logs/inout%in%ip.log" % (nodes, process)
+        tries = 0
 
-        wait_time = 5
-        while(not passed):
-            passed = test_code(nodes, process, wait_time, filename, 0)
-            wait_time = wait_time +1
+        while(tries != 10):
+            passed = False
+            tries = tries+1
+            while(not passed):
+                passed = test_code(nodes, process, wait_time, filename, tries)
+                if (not passed):
+                    wait_time = wait_time+1
 
-        print("Test Passed! Next test...")
+        log = open(filename)
+        lines = log.readlines()
+
+        sum = 0
+        n = 0
+        for line in lines:
+            n = n+1
+            sum = sum + int(line)
+        log.close()
+
+        log = open("plots/salida%in.plot" % (nodes), 'a')
+        log.write("%i"%(process) + " " + str(sum/n) + '\n')
+        log.close()
+
+        print("\nTest Results. Nodes: %i, Process: %i, AvgInercia: %fms" % (nodes, process, sum/n))
 
 print("Test Finished!")
