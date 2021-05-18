@@ -47,10 +47,10 @@ void end_handler() {
     end = 1;
     
     char buffer[55];
-    sprintf(buffer, "t%i %i", type, times);
+    sprintf(buffer, "%i", times);
     FILE *logfile;
     char fileName[55];
-    sprintf(fileName, "logs/times%in%ip.log", numberOfNodes, processPerNode);
+    sprintf(fileName, "logs/times%in%ip%it.log", numberOfNodes, processPerNode, type);
     logfile = fopen(fileName, "a");
     fprintf(logfile, "%s\n", buffer);
     fclose(logfile);

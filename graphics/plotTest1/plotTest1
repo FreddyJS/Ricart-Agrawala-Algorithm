@@ -1,0 +1,13 @@
+#!/usr/bin/gnuplot
+#set logscale x 10
+set xlabel 'proccessPerNode’
+set ylabel 'time(ms)'
+
+# Fijar posición de la leyenda de funciones
+set key top left
+set title 'Tiempo de inercia'
+
+set yrange [5000:5300]
+set term postscript color
+set output 'tiempoDeInercia.ps'
+plot 'salida1n.plot' title "1 Node" with lines, "salida2n.plot" title "2 Nodes" with lines, "salida3n.plot" title "3 Nodes" with lines, "salida4n.plot" title "4 Nodes" with lines, "salida5n.plot" title "5 Nodes" with lines

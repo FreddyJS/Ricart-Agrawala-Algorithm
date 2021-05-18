@@ -66,7 +66,7 @@ int main (int argc, char* argv[]) {
     for (int i=0; i < numberOfNodes; i++){
 	    queues[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT); 
 	
-        if (i > 1) {
+        if (i >= 1) {
             if (queues[i-1] != queues[i]-1) {
                 printf("\033[0;31m¡Las colas están desordenadas!\033[0m (Eliminando...)\n");
                 system("ipcrm -a");

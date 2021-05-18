@@ -3,12 +3,6 @@ import shlex
 import subprocess, signal
 from subprocess import PIPE, run
 
-all = 0
-
-for arg in sys.argv:
-    if (arg == '-all'):
-        all = 1
-
 bash = "make synctime"
 os.system(bash)
 
@@ -46,29 +40,24 @@ while (nodes != 10):
             
             time.sleep(0.5)
 
-        log = open("logs/waited%in%ip.log" % (nodes, process))
-        lines = log.readlines()
+        type = 0
+        while(type != 7):
+            type = type+1
+            
+            log = open("logs/times%in%ip%it.log" % (nodes, process, type))
+            lines = log.readlines()
 
-        sum = 0
-        n = 0
-        for line in lines:
-            n = n+1
-            sum = sum + int(line)
-        log.close()
+            sum = 0
+            n = 0
+            for line in lines:
+                n = n+1
+                sum = sum + int(line)
+            log.close()
 
-        log = open("logs/avgwaited%in.log" % (nodes), 'a')
-        log.write(str(sum/n) + '\n')
-        log.close()
+            log = open("plots/times%in%it.log" % (nodes, type), 'a')
+            log.write("%i" % (process) + str(sum/n) + '\n')
+            log.close()
 
         print("\nTest Results. Nodes: %i, Process: %i, AvgSyncTime: %fms" % (nodes, process, sum/n))
 
-        if (all == 0):
-            usrIn = input('Press ENTER to do the next test (\'q\' to quit):')
-            if (usrIn == 'q'):
-                exit(0)
-
-
-f = open("logs/waited1n5p.log", "r")
-
-print("\n")
-print(f.read()) 
+print("Test Finished!")

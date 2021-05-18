@@ -23,30 +23,57 @@ process = 0
 
 wait_time = 0.1 # 100ms
 
-while (nodes != 10):
+def check_file(filename, nlines):
+    try:
+        log = open("%s" % (filename))
+        lines = log.readlines()
+
+        if (len(lines) >= nlines):
+            return True
+
+        log.close()
+    except IOError:
+        print("Test Failed! The file %s not exists!" % (filename))
+        return False
+
+    print("Test Failed! The file not have the requested lines!")
+    return False
+
+def test_code(nodes, process, wait_time, filename, lines):
+    test = "./init %i %i" % (nodes, process) # ejecuta 1nodo 5 procesos
+
+    print("Testing Inercia Time... Nodes: %i, Process: %i" % (nodes,process))            
+    running = subprocess.Popen(shlex.split(test), shell=False, stdin=PIPE)
+            
+    print("Waiting %f secs... Process %i" % (wait_time, running.pid))
+    time.sleep(wait_time)
+
+    running.communicate(input=b'q') #introduce q a stdin del proceso
+
+    if (check_file(filename, lines)):
+        return True
+
+    return False
+
+while (nodes != 5):
     nodes = nodes+1
 
     process = 0
     while(process != 100):
         process = process+5
-
-        test = "./init %i %i" % (nodes, process) # ejecuta 1nodo 5 procesos
         
-        for i in range (10):
-            print("\nTesting Sync Time... Nodes: %i, Process: %i" % (nodes,process))
-            
-            running = subprocess.Popen(shlex.split(test), shell=False, stdin=PIPE)
-            
-            wait_time = nodes*process*0.03 
+        passed = False
+        wait_time = 1 
+        filename = "logs/waited%in%ip.log" % (nodes, process)
 
-            print("\nWaiting %f secs... Process %i" % (wait_time, running.pid))
-            time.sleep(wait_time)
+        tries = 0
+        for x in range(10):
+            tries = tries+1
+            while(not passed):
+                passed = test_code(nodes, process, wait_time, filename, tries)
+                wait_time = wait_time+1
 
-            running.communicate(input=b'q') #introduce q a stdin del proceso
-            
-            time.sleep(0.5)
-
-        log = open("logs/waited%in%ip.log" % (nodes, process))
+        log = open(filename)
         lines = log.readlines()
 
         sum = 0
@@ -56,19 +83,10 @@ while (nodes != 10):
             sum = sum + int(line)
         log.close()
 
-        log = open("logs/avgwaited%in.log" % (nodes), 'a')
-        log.write(str(sum/n) + '\n')
+        log = open("plots/salida%in.plot" % (nodes), 'a')
+        log.write("%i"%(process) + " " + str(sum/n) + '\n')
         log.close()
 
-        print("\nTest Results. Nodes: %i, Process: %i, AvgSyncTime: %fms" % (nodes, process, sum/n))
+        print("\nTest Results. Nodes: %i, Process: %i, AvgInercia: %fms" % (nodes, process, sum/n))
 
-        if (all == 0):
-            usrIn = input('Press ENTER to do the next test (\'q\' to quit):')
-            if (usrIn == 'q'):
-                exit(0)
-
-
-f = open("logs/waited1n5p.log", "r")
-
-print("\n")
-print(f.read()) 
+print("Test Finished!")

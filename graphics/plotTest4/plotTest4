@@ -1,0 +1,35 @@
+#!/usr/bin/gnuplot
+#set logscale x 10
+set xlabel 'proccessPerNode’
+set ylabel 'timesSynced'
+
+# Fijar posición de la leyenda de funciones
+set key bottom right
+set title 'Times Synced in 1min (1 Node)'
+
+#set xrange [0.5:150]
+set term postscript color
+set output 'timesSynced1n.ps'
+plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
+	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines
+	
+	
+set title 'Times Synced in 1min (2 Node)'
+set output 'timesSynced2n.ps'
+plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
+	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines
+	
+set title 'Times Synced in 1min (3 Node)'
+set output 'timesSynced3n.ps'
+plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
+	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines
+	
+set title 'Times Synced in 1min (4 Node)'
+set output 'timesSynced4n.ps'
+plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
+	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines
+	
+set title 'Times Synced in 1min (5 Node)'
+set output 'timesSynced5n.ps'
+plot 'times1n1t.plot' title "Type 1" with lines, "times1n2t.plot" title "Type 2" with lines, "times1n3t.plot" title "Type 2" with lines, "times1nd4t.plot" title "Type 2" with lines, \
+	"times1n5t.plot" title "Type 2" with lines, "times1n6t.plot" title "Type 2" with lines

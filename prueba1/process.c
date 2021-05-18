@@ -261,7 +261,8 @@ int main (int argc, char* argv[]){
         if (type == PAGOS)
             printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
 
-        sleep(SCTIME);
+        if (type != PAGOS)
+            sleep(SCTIME);
 
         // Fuera de la sección crítica
         if (type == PAGOS)

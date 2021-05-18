@@ -7,19 +7,19 @@ bash = "make"
 os.system(bash)
 
 bash = "rm -r logs"
-os.system(bash)
+#os.system(bash)
 
 bash = "mkdir logs"
-os.system(bash)
+#os.system(bash)
 
-nodes = 0
+nodes = 2
 process = 0
 
 wait_time = 0.1 # 100ms
 
 def check_file(filename, nlines):
     try:
-        log = open("logs/%s" % (filename))
+        log = open("%s" % (filename))
         lines = log.readlines()
 
         if (len(lines) >= nlines):
@@ -27,7 +27,7 @@ def check_file(filename, nlines):
 
         log.close()
     except IOError:
-        print("Test Failed! The file not exists!")
+        print("Test Failed! The file %s not exists!" % (filename))
         return False
 
     print("Test Failed! The file not have the requested lines!")
@@ -36,10 +36,10 @@ def check_file(filename, nlines):
 def test_code(nodes, process, wait_time, filename, lines):
     test = "./init %i %i" % (nodes, process) # ejecuta 1nodo 5 procesos
 
-    print("\nTesting InOut Time... Nodes: %i, Process: %i" % (nodes,process))            
+    print("Testing Inercia Time... Nodes: %i, Process: %i" % (nodes,process))            
     running = subprocess.Popen(shlex.split(test), shell=False, stdin=PIPE)
             
-    print("\nWaiting %f secs... Process %i" % (wait_time, running.pid))
+    print("Waiting %f secs... Process %i" % (wait_time, running.pid))
     time.sleep(wait_time)
 
     running.communicate(input=b'q') #introduce q a stdin del proceso
@@ -57,7 +57,7 @@ while (nodes != 5):
         process = process+5
         
         passed = False
-        wait_time = 30 
+        wait_time = 60 
         filename = "logs/inercia%in%ip.log" % (nodes, process)
 
         while(not passed):
