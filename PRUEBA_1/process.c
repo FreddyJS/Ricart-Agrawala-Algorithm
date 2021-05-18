@@ -239,15 +239,20 @@ int main (int argc, char* argv[]){
 
         gettimeofday(&stop_time, NULL);
         waited = (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000;
-        printf("\n[Node %i - Process %i] \033[0;34mWaited %lu ms\033[0m\n", nodeId, id, waited); 
+        
+        if (type == PAGOS)
+            printf("\n[Node %i - Process %i] \033[0;34mWaited %lu ms\033[0m\n", nodeId, id, waited); 
 
         //SECCION CRITICA
-        printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
+        if (type == PAGOS)
+            printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
 
-        sleep(SCTIME);
+        if (type != PAGOS)
+            sleep(SCTIME);
 
         // Fuera de la sección crítica
-        printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
+        if (type == PAGOS)
+            printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
         
         sem_wait(&mutex);
         dentro=0;
@@ -255,7 +260,8 @@ int main (int argc, char* argv[]){
         sem_post(&mutex);
 
         ticketok_t msgok;
-        printf("[Node %i - Process %i] \033[0;32mPendientes:\033[0m %i\n", nodeId, id, n_pendientes);
+        if (type == PAGOS)
+            printf("[Node %i - Process %i] \033[0;32mPendientes:\033[0m %i\n", nodeId, id, n_pendientes);
 
         for (int i = 0; i < n_pendientes; i++)
         {
@@ -269,6 +275,20 @@ int main (int argc, char* argv[]){
             msgsnd(vecinos[nodoDest],&msgok, sizeof(int)*3,0); 
         }
         n_pendientes=0;
+
+
+        if (type == PAGOS){
+
+            char buffer[55];
+            sprintf(buffer, "%lu", waited);
+
+            FILE *logfile;
+            char fileName[55];
+            sprintf(fileName, "logs/inercia%in%ip.log", numberOfNodes, processPerNode);
+            logfile = fopen(fileName, "a");
+            fprintf(logfile, "%s\n", buffer);
+            fclose(logfile);
+        }
 
 #ifndef SYNCTIME
     }

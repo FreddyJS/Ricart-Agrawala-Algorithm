@@ -81,10 +81,11 @@ int main (int argc, char* argv[]){
     child_t childs[processPerNode];
 
     for (int i=0; i<processPerNode; i++){
-        int type = EVENTOS;
-        if (i > processPerNode/4 ) type = GRADAS;
-        if (i > 2*processPerNode/4) type = PRERESERVAS;
-        if (i > 3*processPerNode/4) type = ADMIN;
+        int type = PAGOS;
+        if (i > processPerNode/2) type = PAGOS;
+        if (nodeId == numberOfNodes -1 && i == processPerNode -1){
+            type = ANULACIONES;
+        }
 
         pid_t child=fork();
         int processID = i;

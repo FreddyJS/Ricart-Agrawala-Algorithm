@@ -232,13 +232,28 @@ int main (int argc, char* argv[]){
 
         // Esperamos por recibir todos los oks
         sem_wait(&sc);
+
         //sem_wait(&mutex);
          //dentro = 1;
         //quiero=0;
         //sem_post(&mutex);
 
         gettimeofday(&stop_time, NULL);
+
+        char buffer[256];
+        sprintf(buffer, "entry: %lu", stop_time.tv_sec*1000 + stop_time.tv_usec/1000);
+
+        FILE *logfile;
+        char fileName[55];
+        sprintf(fileName, "logs/inout%in%ip.log", numberOfNodes, processPerNode);
+        logfile = fopen(fileName, "a");
+        fprintf(logfile, "%s\n", buffer);
+
+        fclose(logfile);
+
+
         waited = (stop_time.tv_sec - start_time.tv_sec)*1000 + (stop_time.tv_usec - start_time.tv_usec)/1000;
+
         printf("\n[Node %i - Process %i] \033[0;34mWaited %lu ms\033[0m\n", nodeId, id, waited); 
 
         //SECCION CRITICA
@@ -249,6 +264,17 @@ int main (int argc, char* argv[]){
         // Fuera de la sección crítica
         printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
         
+
+        gettimeofday(&stop_time, NULL);
+        sprintf(buffer, "out: %lu", stop_time.tv_sec*1000 + stop_time.tv_usec/1000);
+
+        sprintf(fileName, "logs/inout%in%ip.log", numberOfNodes, processPerNode);
+        logfile = fopen(fileName, "a");
+        fprintf(logfile, "%s\n", buffer);
+
+        fclose(logfile);
+
+
         sem_wait(&mutex);
         dentro=0;
         quiero=0;

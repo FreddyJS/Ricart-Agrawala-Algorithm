@@ -23,6 +23,13 @@ int quiero=0;
 int dentro=0;
 int end=0;
 
+
+int numberOfNodes;
+int processPerNode;
+int times = 0;
+int type;
+
+
 struct pendientes
 {
     int node;
@@ -40,6 +47,19 @@ struct params{
 
 void cont_handler() {
     end = 1;
+
+    char buffer[55];
+    sprintf(buffer, "%i", times);
+    FILE *logfile;
+    char fileName[55];
+    sprintf(fileName, "logs/times%in%ip%it.log", numberOfNodes, processPerNode, type);
+    logfile = fopen(fileName, "a");
+    fprintf(logfile, "%s\n", buffer);
+    fclose(logfile);
+
+    exit(0);
+
+
 }
 
 void init_sighandler() {
@@ -163,10 +183,10 @@ int main (int argc, char* argv[]){
     sem_init(&sc, 0, 0);
 
     int id = atoi(argv[1]);
-    int type = atoi(argv[2]);
+    type = atoi(argv[2]);
     int firstq = atoi(argv[3]);
-    int numberOfNodes = atoi(argv[4]);
-    int processPerNode = atoi(argv[5]);
+    numberOfNodes = atoi(argv[4]);
+    processPerNode = atoi(argv[5]);
     int nodeId = atoi(argv[6]);
     int sems_key = atoi(argv[7]);
     int data_key = atoi(argv[8]);
@@ -232,6 +252,7 @@ int main (int argc, char* argv[]){
 
         // Esperamos por recibir todos los oks
         sem_wait(&sc);
+        times++;
         //sem_wait(&mutex);
          //dentro = 1;
         //quiero=0;
