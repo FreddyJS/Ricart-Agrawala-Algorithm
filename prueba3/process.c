@@ -270,7 +270,7 @@ int main (int argc, char* argv[]){
         //SECCION CRITICA
         printf("[Node %i - Process %i] \033[0;31mDentro de la sección crítica.\033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);
 
-        sleep(1);
+        sleep(SCTIME);
 
         // Fuera de la sección crítica
         printf("[Node %i - Process %i] \033[0;32mFuera de la sección crítica. \033[0m Ticket: %i, Type: %i\n", nodeId, id,  mi_ticket, type);

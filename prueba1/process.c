@@ -221,7 +221,7 @@ int main (int argc, char* argv[]){
     {  
 #endif 
         if (type == PAGOS)
-            sleep(10);
+            sleep(5);
             
         sem_wait(&mutex);
         quiero=1;
@@ -289,24 +289,23 @@ int main (int argc, char* argv[]){
         }
         n_pendientes=0;
 
-        if (type == PAGOS) break;
+        if (type == PAGOS){
+
+            char buffer[55];
+            sprintf(buffer, "%lu", waited);
+
+            FILE *logfile;
+            char fileName[55];
+            sprintf(fileName, "logs/inercia%in%ip.log", numberOfNodes, processPerNode);
+            logfile = fopen(fileName, "a");
+            fprintf(logfile, "%s\n", buffer);
+            fclose(logfile);
+        }
 #ifndef SYNCTIME
     }
 #endif
 
     free(pendientes);
-
-    char buffer[55];
-    sprintf(buffer, "%lu", waited);
-
-    FILE *logfile;
-    char fileName[55];
-    sprintf(fileName, "logs/inercia%in%ip.log", numberOfNodes, processPerNode);
-    logfile = fopen(fileName, "a");
-    fprintf(logfile, "%s\n", buffer);
-    fclose(logfile);
-
-
 
 #ifdef SYNCTIME
     // justo al acabar 0 delay
